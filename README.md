@@ -1,5 +1,10 @@
 # ansible-arch
 
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat&logo=ansible&logoColor=white)
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat&logo=arch-linux&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/thejollydev/ansible-arch?style=flat)
+
 Idempotent Ansible playbook for automated Arch Linux workstation provisioning and configuration management.
 
 ## Overview
