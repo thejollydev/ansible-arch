@@ -1,0 +1,10 @@
+---
+- name: Install XRDP
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - xrdp
+      - xorgxrdp
+    state: present
+    use: paru
+  when: remote_desktop | bool

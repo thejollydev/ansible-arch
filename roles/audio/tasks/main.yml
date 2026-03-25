@@ -1,0 +1,12 @@
+---
+- name: Install PipeWire audio stack
+  community.general.pacman:
+    name:
+      - pipewire
+      - pipewire-alsa
+      - pipewire-jack
+      - pipewire-pulse
+      - gst-plugin-pipewire
+      - wireplumber
+      - libpulse
+    state: present

@@ -1,0 +1,44 @@
+---
+- name: Configure Arch Linux workstation
+  hosts: workstations
+  become: true
+
+  roles:
+    - role: base
+      tags: base
+    - role: networking
+      tags: networking
+    - role: bluetooth
+      tags: bluetooth
+    - role: audio
+      tags: audio
+    - role: gpu-nvidia
+      tags: gpu-nvidia
+    - role: desktop-kde
+      tags: desktop-kde
+    - role: desktop-hyprland
+      tags: desktop-hyprland
+    - role: shell
+      tags: shell
+    - role: terminal
+      tags: terminal
+    - role: editor
+      tags: editor
+    - role: dev-tools
+      tags: dev-tools
+    - role: apps
+      tags: apps
+    - role: apps-aur
+      tags: apps-aur
+    - role: printing
+      tags: printing
+    - role: hardware
+      tags: hardware
+    - role: insync
+      tags: insync
+    - role: remote-desktop
+      tags: remote-desktop
+    - role: dotfiles
+      tags: dotfiles
+    - role: services
+      tags: services

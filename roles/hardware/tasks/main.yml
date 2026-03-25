@@ -1,0 +1,26 @@
+---
+- name: Install DisplayLink packages
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - displaylink
+      - evdi-dkms
+    state: present
+    use: paru
+  when: displaylink | bool
+
+- name: Install iOS integration packages
+  community.general.pacman:
+    name:
+      - ifuse
+      - usbmuxd
+    state: present
+  when: ios_tools | bool
+
+- name: Install Plymouth boot splash
+  community.general.pacman:
+    name:
+      - breeze-plymouth
+      - plymouth-kcm
+    state: present
+  when: plymouth | bool

@@ -1,0 +1,20 @@
+---
+- name: Install networking packages
+  community.general.pacman:
+    name:
+      - networkmanager
+      - network-manager-applet
+      - wireguard-tools
+      - nss-mdns
+      - avahi
+      - bind
+      - systemd-resolvconf
+    state: present
+
+- name: Install WiFi packages
+  community.general.pacman:
+    name:
+      - iwd
+      - wireless_tools
+    state: present
+  when: wifi | bool

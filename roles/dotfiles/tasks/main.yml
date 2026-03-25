@@ -1,0 +1,15 @@
+---
+- name: Ensure dotfiles repo is cloned
+  become: false
+  ansible.builtin.git:
+    repo: git@github.com:thejollydev/dotfiles.git
+    dest: /home/joseph/dotfiles
+    update: false
+
+- name: Stow dotfiles packages
+  become: false
+  ansible.builtin.command:
+    cmd: stow --restow {{ item }}
+    chdir: /home/joseph/dotfiles
+  loop: "{{ dotfiles_packages }}"
+  changed_when: false

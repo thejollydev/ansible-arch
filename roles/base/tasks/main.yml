@@ -1,0 +1,198 @@
+---
+# ============================================================
+# base role — system packages, AUR helper, locale, hostname,
+#             kernels, bootloader, btrfs, snapper, zram
+# ============================================================
+
+# ------------------------------------------------------------
+# Pacman configuration
+# ------------------------------------------------------------
+
+- name: Enable parallel downloads in pacman
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#ParallelDownloads'
+    line: 'ParallelDownloads = 5'
+
+- name: Enable Color in pacman
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#Color'
+    line: 'Color'
+
+# ------------------------------------------------------------
+# Core system packages
+# ------------------------------------------------------------
+
+- name: Install base system packages
+  community.general.pacman:
+    name:
+      - base-devel
+      - sudo
+      - git
+      - curl
+      - wget
+      - rsync
+      - unzip
+      - zip
+      - tree
+      - nano
+      - vim
+      - stow
+      - reflector
+      - btrfs-progs
+      - inotify-tools
+      - smartmontools
+      - dkms
+      - zram-generator
+      - efibootmgr
+    state: present
+    update_cache: true
+
+# ------------------------------------------------------------
+# Kernels and firmware
+# ------------------------------------------------------------
+
+- name: Install kernels
+  community.general.pacman:
+    name: "{{ kernels }}"
+    state: present
+
+- name: Install microcode and firmware
+  community.general.pacman:
+    name:
+      - intel-ucode
+      - linux-firmware
+    state: present
+
+# ------------------------------------------------------------
+# AUR helper — paru
+# ------------------------------------------------------------
+
+- name: Check if paru is installed
+  ansible.builtin.command: which paru
+  register: paru_check
+  changed_when: false
+  failed_when: false
+
+- name: Clone paru from AUR
+  become: false
+  ansible.builtin.git:
+    repo: https://aur.archlinux.org/paru.git
+    dest: /tmp/paru
+    depth: 1
+  when: paru_check.rc != 0
+
+- name: Build and install paru
+  become: false
+  ansible.builtin.command:
+    cmd: makepkg -si --noconfirm
+    chdir: /tmp/paru
+    creates: /usr/bin/paru
+  when: paru_check.rc != 0
+
+# ------------------------------------------------------------
+# Locale
+# ------------------------------------------------------------
+
+- name: Set locale in locale.gen
+  ansible.builtin.lineinfile:
+    path: /etc/locale.gen
+    regexp: '^#{{ locale }} UTF-8'
+    line: '{{ locale }} UTF-8'
+
+- name: Generate locale
+  ansible.builtin.command: locale-gen
+  changed_when: false
+
+- name: Set system locale
+  ansible.builtin.copy:
+    dest: /etc/locale.conf
+    content: "LANG={{ locale }}\n"
+    mode: '0644'
+
+- name: Set vconsole keymap
+  ansible.builtin.copy:
+    dest: /etc/vconsole.conf
+    content: "KEYMAP=us\n"
+    mode: '0644'
+
+# ------------------------------------------------------------
+# Timezone
+# ------------------------------------------------------------
+
+- name: Set timezone
+  ansible.builtin.file:
+    src: /usr/share/zoneinfo/{{ timezone }}
+    dest: /etc/localtime
+    state: link
+    force: true
+
+- name: Sync hardware clock
+  ansible.builtin.command: hwclock --systohc
+  changed_when: false
+
+# ------------------------------------------------------------
+# Hostname
+# ------------------------------------------------------------
+
+- name: Set hostname
+  ansible.builtin.copy:
+    dest: /etc/hostname
+    content: "{{ hostname }}\n"
+    mode: '0644'
+
+- name: Set /etc/hosts
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    mode: '0644'
+
+# ------------------------------------------------------------
+# GRUB and btrfs boot
+# ------------------------------------------------------------
+
+- name: Install GRUB and btrfs boot packages
+  community.general.pacman:
+    name:
+      - grub
+      - grub-btrfs
+      - os-prober
+    state: present
+
+# ------------------------------------------------------------
+# Snapper (btrfs snapshots)
+# ------------------------------------------------------------
+
+- name: Install snapper
+  community.general.pacman:
+    name: snapper
+    state: present
+
+# ------------------------------------------------------------
+# zram swap
+# ------------------------------------------------------------
+
+- name: Configure zram-generator
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    content: |
+      [zram0]
+      zram-size = ram / 2
+      compression-algorithm = zstd
+    mode: '0644'
+
+# ------------------------------------------------------------
+# reflector (mirror list)
+# ------------------------------------------------------------
+
+- name: Configure reflector
+  ansible.builtin.copy:
+    dest: /etc/xdg/reflector/reflector.conf
+    content: |
+      --save /etc/pacman.d/mirrorlist
+      --country US
+      --protocol https
+      --latest 10
+      --sort rate
+    mode: '0644'

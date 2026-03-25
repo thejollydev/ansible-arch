@@ -1,0 +1,14 @@
+---
+- name: Install NVIDIA packages
+  community.general.pacman:
+    name:
+      - nvidia-open-dkms
+      - nvidia-settings
+      - nvidia-prime
+      - lib32-nvidia-utils
+      - libva-nvidia-driver
+      - opencl-nvidia
+      - cuda
+      - cudnn
+    state: present
+  when: gpu_nvidia | bool

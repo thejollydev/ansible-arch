@@ -1,0 +1,44 @@
+---
+# Connection
+ansible_connection: local
+
+# Machine identity
+hostname: jolly-LOQ-arch
+timezone: America/Detroit
+locale: en_US.UTF-8
+
+# Kernels (first in list = default GRUB entry)
+kernels:
+  - linux-zen
+  - linux-zen-headers
+  - linux-lts
+  - linux-lts-headers
+  - linux-hardened
+  - linux-hardened-headers
+  - linux
+  - linux-headers
+
+# Feature flags
+gpu_nvidia: true
+hyprland: true
+bluetooth: true
+wifi: true
+displaylink: true
+ios_tools: true
+printing: true
+insync: true
+remote_desktop: false
+plymouth: true
+
+# Dotfiles stow packages
+dotfiles_packages:
+  - zsh
+  - git
+  - starship
+  - kitty
+  - zellij
+  - tmux
+  - nvim
+  - claude
+  - gemini
+  - systemd

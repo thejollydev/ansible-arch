@@ -1,0 +1,8 @@
+---
+- name: Install terminal packages
+  community.general.pacman:
+    name:
+      - kitty
+      - zellij
+      - tmux
+    state: present

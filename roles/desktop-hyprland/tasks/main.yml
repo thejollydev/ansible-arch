@@ -1,0 +1,14 @@
+---
+- name: Install Hyprland and ecosystem
+  community.general.pacman:
+    name:
+      - hyprland
+      - uwsm
+      - xdg-desktop-portal-hyprland
+      - grim
+      - slurp
+      - wofi
+      - dunst
+      - wl-clipboard
+    state: present
+  when: hyprland | bool

@@ -1,0 +1,38 @@
+---
+- name: Install development tools
+  community.general.pacman:
+    name:
+      - git
+      - github-cli
+      - docker
+      - docker-compose
+      - go
+      - nodejs
+      - npm
+      - yarn
+      - python-pip
+      - python-poetry
+      - python-virtualenv
+      - uv
+      - terraform
+      - bat
+      - btop
+      - htop
+      - duf
+      - dust
+      - eza
+      - fd
+      - fzf
+      - fastfetch
+      - hyperfine
+      - procs
+      - tokei
+      - bind
+      - dbeaver
+    state: present
+
+- name: Add joseph to docker group
+  ansible.builtin.user:
+    name: joseph
+    groups: docker
+    append: true

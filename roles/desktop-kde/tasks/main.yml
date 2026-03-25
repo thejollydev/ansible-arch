@@ -1,0 +1,21 @@
+---
+- name: Install KDE Plasma 6
+  community.general.pacman:
+    name:
+      - plasma-meta
+      - plasma-workspace
+      - plasma-sdk
+      - kde-applications-meta
+      - dolphin
+      - kate
+      - konsole
+      - ark
+      - kgamma
+      - wacomtablet
+      - kwin-x11
+      - qt5-wayland
+      - qt6-wayland
+      - sddm
+      - ttf-jetbrains-mono-nerd
+      - xorg-xinit
+    state: present

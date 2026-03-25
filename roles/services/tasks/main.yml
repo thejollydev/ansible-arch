@@ -1,0 +1,88 @@
+---
+# ------------------------------------------------------------
+# Core system services (always)
+# ------------------------------------------------------------
+
+- name: Enable core system services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop:
+    - NetworkManager
+    - NetworkManager-dispatcher
+    - avahi-daemon
+    - docker
+    - sddm
+    - grub-btrfsd
+    - snapper-timeline.timer
+    - snapper-cleanup.timer
+    - reflector.timer
+    - systemd-resolved
+    - systemd-timesyncd
+
+# ------------------------------------------------------------
+# Conditional system services
+# ------------------------------------------------------------
+
+- name: Enable bluetooth service
+  ansible.builtin.systemd:
+    name: bluetooth
+    enabled: true
+    state: started
+  when: bluetooth | bool
+
+- name: Enable printing services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - cups
+    - cups.path
+    - cups.socket
+  when: printing | bool
+
+- name: Enable DisplayLink service
+  ansible.builtin.systemd:
+    name: displaylink
+    enabled: true
+    state: started
+  when: displaylink | bool
+
+- name: Enable NVIDIA sleep services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+  loop:
+    - nvidia-hibernate
+    - nvidia-resume
+    - nvidia-suspend
+    - nvidia-suspend-then-hibernate
+  when: gpu_nvidia | bool
+
+- name: Enable XRDP service
+  ansible.builtin.systemd:
+    name: xrdp
+    enabled: true
+    state: started
+  when: remote_desktop | bool
+
+# ------------------------------------------------------------
+# User services (always)
+# ------------------------------------------------------------
+
+- name: Enable user services
+  become: false
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    scope: user
+  loop:
+    - pipewire
+    - pipewire-pulse
+    - wireplumber
+    - obsidian-http-mcp
+    - xdg-user-dirs

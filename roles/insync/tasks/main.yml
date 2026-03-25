@@ -1,0 +1,10 @@
+---
+- name: Install insync
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - insync
+      - insync-dolphin-plasma-6-git
+    state: present
+    use: paru
+  when: insync | bool

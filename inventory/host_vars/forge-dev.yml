@@ -1,0 +1,41 @@
+---
+# Connection
+ansible_host: 10.10.30.10
+ansible_user: joseph
+
+# Machine identity
+hostname: forge-dev
+timezone: America/Detroit
+locale: en_US.UTF-8
+
+# Kernels (zen default, lts fallback only)
+kernels:
+  - linux-zen
+  - linux-zen-headers
+  - linux-lts
+  - linux-lts-headers
+
+# Feature flags
+gpu_nvidia: false
+hyprland: false
+bluetooth: false
+wifi: false
+displaylink: false
+ios_tools: false
+printing: true
+insync: true
+remote_desktop: true
+plymouth: false
+
+# Dotfiles stow packages
+dotfiles_packages:
+  - zsh
+  - git
+  - starship
+  - kitty
+  - zellij
+  - tmux
+  - nvim
+  - claude
+  - gemini
+  - systemd

@@ -1,0 +1,8 @@
+---
+- name: Install bluetooth packages
+  community.general.pacman:
+    name:
+      - bluez
+      - bluez-utils
+    state: present
+  when: bluetooth | bool

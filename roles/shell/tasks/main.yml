@@ -1,0 +1,14 @@
+---
+- name: Install shell packages
+  community.general.pacman:
+    name:
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+      - starship
+    state: present
+
+- name: Set zsh as default shell for joseph
+  ansible.builtin.user:
+    name: joseph
+    shell: /bin/zsh

@@ -1,0 +1,16 @@
+---
+- name: Install AUR applications
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - bitwarden-bin
+      - google-chrome
+      - visual-studio-code-bin
+      - jetbrains-toolbox
+      - slack-desktop-wayland
+      - zoom
+      - notion-app-electron
+      - postman-bin
+      - antigravity
+    state: present
+    use: paru

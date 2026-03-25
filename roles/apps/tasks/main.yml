@@ -1,0 +1,16 @@
+---
+- name: Install applications
+  community.general.pacman:
+    name:
+      - firefox
+      - chromium
+      - discord
+      - thunderbird
+      - gimp
+      - inkscape
+      - drawio-desktop
+      - libreoffice-fresh
+      - obsidian
+      - vlc
+      - cups-pdf
+    state: present

@@ -1,0 +1,20 @@
+---
+- name: Install printing packages
+  community.general.pacman:
+    name:
+      - cups
+      - cups-pdf
+      - cups-pk-helper
+      - system-config-printer
+      - ipp-usb
+      - sane-airscan
+    state: present
+  when: printing | bool
+
+- name: Install Canon printer driver
+  become: false
+  kewlfft.aur.aur:
+    name: canon-pixma-lt7500-complete
+    state: present
+    use: paru
+  when: printing | bool
