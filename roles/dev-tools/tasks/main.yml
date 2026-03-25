@@ -36,3 +36,32 @@
     name: joseph
     groups: docker
     append: true
+
+# ------------------------------------------------------------
+# Global npm packages
+# ------------------------------------------------------------
+
+- name: Install global npm packages
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: present
+  loop:
+    - obsidian-http-mcp
+    - "@google/gemini-cli"
+
+# ------------------------------------------------------------
+# Claude Code CLI
+# ------------------------------------------------------------
+
+- name: Check if Claude Code is installed
+  become: false
+  ansible.builtin.stat:
+    path: /home/joseph/.local/bin/claude
+  register: claude_bin
+
+- name: Install Claude Code CLI
+  become: false
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://claude.ai/install.sh | sh
+  when: not claude_bin.stat.exists

@@ -4,7 +4,7 @@
   ansible.builtin.git:
     repo: git@github.com:thejollydev/dotfiles.git
     dest: /home/joseph/dotfiles
-    update: false
+    update: true
 
 - name: Stow dotfiles packages
   become: false

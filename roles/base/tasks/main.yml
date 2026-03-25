@@ -5,6 +5,15 @@
 # ============================================================
 
 # ------------------------------------------------------------
+# Full system upgrade (required on Arch — partial upgrades break dependencies)
+# ------------------------------------------------------------
+
+- name: Full system upgrade
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
+
+# ------------------------------------------------------------
 # Pacman configuration
 # ------------------------------------------------------------
 
@@ -40,14 +49,12 @@
       - vim
       - stow
       - reflector
-      - btrfs-progs
       - inotify-tools
       - smartmontools
       - dkms
       - zram-generator
       - efibootmgr
     state: present
-    update_cache: true
 
 # ------------------------------------------------------------
 # Kernels and firmware
@@ -90,6 +97,17 @@
     chdir: /tmp/paru
     creates: /usr/bin/paru
   when: paru_check.rc != 0
+
+# ------------------------------------------------------------
+# Passwordless sudo for pacman (required for paru/AUR installs)
+# ------------------------------------------------------------
+
+- name: Allow joseph passwordless sudo for pacman
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/joseph-pacman
+    content: "joseph ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+    mode: '0440'
+    validate: 'visudo -cf %s'
 
 # ------------------------------------------------------------
 # Locale
@@ -149,25 +167,33 @@
     mode: '0644'
 
 # ------------------------------------------------------------
-# GRUB and btrfs boot
+# GRUB bootloader
 # ------------------------------------------------------------
 
-- name: Install GRUB and btrfs boot packages
+- name: Install GRUB
   community.general.pacman:
     name:
       - grub
-      - grub-btrfs
       - os-prober
     state: present
 
 # ------------------------------------------------------------
-# Snapper (btrfs snapshots)
+# btrfs tools and snapper (btrfs only)
 # ------------------------------------------------------------
+
+- name: Install btrfs packages
+  community.general.pacman:
+    name:
+      - btrfs-progs
+      - grub-btrfs
+    state: present
+  when: btrfs | bool
 
 - name: Install snapper
   community.general.pacman:
     name: snapper
     state: present
+  when: btrfs | bool
 
 # ------------------------------------------------------------
 # zram swap

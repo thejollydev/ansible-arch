@@ -29,6 +29,7 @@ printing: true
 insync: true
 remote_desktop: false
 plymouth: true
+btrfs: true
 
 # Dotfiles stow packages
 dotfiles_packages:
@@ -37,7 +38,6 @@ dotfiles_packages:
   - starship
   - kitty
   - zellij
-  - tmux
   - nvim
   - claude
   - gemini
