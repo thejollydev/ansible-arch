@@ -8,3 +8,11 @@
     state: present
     use: paru
   when: remote_desktop | bool
+
+- name: Create .xinitrc for KDE Plasma via XRDP
+  become: false
+  ansible.builtin.copy:
+    dest: /home/joseph/.xinitrc
+    content: "exec startplasma-x11\n"
+    mode: '0755'
+  when: remote_desktop | bool

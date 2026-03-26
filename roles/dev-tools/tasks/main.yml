@@ -29,6 +29,7 @@
       - tokei
       - bind
       - dbeaver
+      - prometheus-node-exporter
     state: present
 
 - name: Add joseph to docker group

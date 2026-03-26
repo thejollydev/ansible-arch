@@ -18,6 +18,7 @@
     - reflector.timer
     - systemd-resolved
     - systemd-timesyncd
+    - prometheus-node-exporter
 
 - name: Enable btrfs snapshot services
   ansible.builtin.systemd:
@@ -92,6 +93,7 @@
     - pipewire
     - pipewire-pulse
     - wireplumber
+    - ssh-agent
     - obsidian-http-mcp
     - xdg-user-dirs
 

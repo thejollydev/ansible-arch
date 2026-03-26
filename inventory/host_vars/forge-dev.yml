@@ -2,6 +2,7 @@
 # Connection
 ansible_host: 10.10.30.10
 ansible_user: joseph
+ansible_ssh_common_args: '-o ForwardAgent=yes'
 
 # Machine identity
 hostname: forge-dev

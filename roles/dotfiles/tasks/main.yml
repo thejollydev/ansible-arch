@@ -1,10 +1,19 @@
 ---
+- name: Accept GitHub SSH host key
+  become: false
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 github.com 2>/dev/null') }}"
+    path: /home/joseph/.ssh/known_hosts
+    state: present
+
 - name: Ensure dotfiles repo is cloned
   become: false
   ansible.builtin.git:
     repo: git@github.com:thejollydev/dotfiles.git
     dest: /home/joseph/dotfiles
     update: true
+    accept_newhostkey: true
 
 - name: Stow dotfiles packages
   become: false
@@ -13,3 +22,12 @@
     chdir: /home/joseph/dotfiles
   loop: "{{ dotfiles_packages }}"
   changed_when: false
+
+- name: Enable ssh-agent user service
+  become: false
+  ansible.builtin.systemd:
+    name: ssh-agent
+    enabled: true
+    state: started
+    scope: user
+    daemon_reload: true
