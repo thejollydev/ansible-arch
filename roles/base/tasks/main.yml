@@ -116,7 +116,7 @@
 - name: Set locale in locale.gen
   ansible.builtin.lineinfile:
     path: /etc/locale.gen
-    regexp: '^#{{ locale }} UTF-8'
+    regexp: '^#?\s*{{ locale }} UTF-8'
     line: '{{ locale }} UTF-8'
 
 - name: Generate locale
@@ -219,6 +219,6 @@
       --save /etc/pacman.d/mirrorlist
       --country US
       --protocol https
-      --latest 10
+      --latest 25
       --sort rate
     mode: '0644'
