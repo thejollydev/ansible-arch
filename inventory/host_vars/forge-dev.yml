@@ -26,6 +26,7 @@ ios_tools: false
 printing: true
 insync: true
 remote_desktop: true
+node_exporter: true
 plymouth: false
 btrfs: false
 

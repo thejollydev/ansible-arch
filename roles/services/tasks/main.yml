@@ -18,7 +18,13 @@
     - reflector.timer
     - systemd-resolved
     - systemd-timesyncd
-    - prometheus-node-exporter
+
+- name: Enable prometheus-node-exporter
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    enabled: true
+    state: started
+  when: node_exporter | bool
 
 - name: Enable btrfs snapshot services
   ansible.builtin.systemd:

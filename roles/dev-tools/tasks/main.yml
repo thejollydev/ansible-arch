@@ -29,8 +29,13 @@
       - tokei
       - bind
       - dbeaver
-      - prometheus-node-exporter
     state: present
+
+- name: Install prometheus-node-exporter
+  community.general.pacman:
+    name: prometheus-node-exporter
+    state: present
+  when: node_exporter | bool
 
 - name: Add joseph to docker group
   ansible.builtin.user:
