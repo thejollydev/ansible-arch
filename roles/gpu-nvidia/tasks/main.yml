@@ -2,7 +2,7 @@
 - name: Install NVIDIA packages
   community.general.pacman:
     name:
-      - nvidia-open-dkms
+      - nvidia-dkms
       - nvidia-settings
       - nvidia-prime
       - lib32-nvidia-utils

@@ -53,7 +53,7 @@ ansible-playbook site.yml --list-tasks
 | `networking` | NetworkManager, wireguard-tools, avahi, iwd | `wifi` |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
-| `gpu-nvidia` | nvidia-open-dkms, CUDA, cuDNN | `gpu_nvidia` |
+| `gpu-nvidia` | nvidia-dkms, CUDA, cuDNN | `gpu_nvidia` |
 | `desktop-kde` | KDE Plasma 6, SDDM, fonts | — |
 | `desktop-hyprland` | Hyprland, uwsm, wofi, dunst, grim | `hyprland` |
 | `shell` | zsh, plugins, starship, default shell | — |
