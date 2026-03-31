@@ -12,7 +12,7 @@
   ansible.builtin.git:
     repo: git@github.com:thejollydev/dotfiles.git
     dest: /home/joseph/dotfiles
-    update: true
+    update: false
     accept_newhostkey: true
 
 - name: Stow dotfiles packages
