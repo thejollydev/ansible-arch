@@ -25,6 +25,7 @@ displaylink: false
 ios_tools: false
 printing: true
 insync: true
+syncthing: true
 remote_desktop: true
 node_exporter: true
 plymouth: false

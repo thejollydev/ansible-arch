@@ -29,6 +29,7 @@
       - tokei
       - bind
       - dbeaver
+      - ollama
     state: present
 
 - name: Install prometheus-node-exporter

@@ -38,6 +38,9 @@
       tags: insync
     - role: remote-desktop
       tags: remote-desktop
+    - role: syncthing
+      tags: syncthing
+      when: syncthing | bool
     - role: dotfiles
       tags: dotfiles
     - role: services

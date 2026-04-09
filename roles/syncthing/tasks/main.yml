@@ -1,0 +1,13 @@
+---
+- name: Install Syncthing
+  community.general.pacman:
+    name: syncthing
+    state: present
+
+- name: Enable Syncthing user service
+  become: false
+  ansible.builtin.systemd:
+    name: syncthing
+    enabled: true
+    state: started
+    scope: user
