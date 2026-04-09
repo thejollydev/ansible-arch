@@ -11,10 +11,6 @@
     state: present
   when: printing | bool
 
-- name: Install Canon printer driver
-  become: false
-  kewlfft.aur.aur:
-    name: canon-pixma-lt7500-complete
-    state: present
-    use: paru
-  when: printing | bool
+# Canon TR4700: Do NOT install cnijfilter2 or canon-pixma-lt7500-complete.
+# Use CUPS web UI (localhost:631) with IPP Everywhere driver instead.
+# See: 02_Knowledge-Base/Quick-References/Linux/canon-tr4700-printer-setup.md

@@ -12,5 +12,4 @@
       - libreoffice-fresh
       - obsidian
       - vlc
-      - cups-pdf
     state: present

@@ -72,6 +72,18 @@
       - linux-firmware
     state: present
 
+    # ------------------------------------------------------------
+# Passwordless sudo for pacman (required for paru/AUR installs)
+# ------------------------------------------------------------
+
+- name: Allow joseph passwordless sudo for pacman
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/joseph-pacman
+    content: "joseph ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+
 # ------------------------------------------------------------
 # AUR helper — paru
 # ------------------------------------------------------------
@@ -98,16 +110,7 @@
     creates: /usr/bin/paru
   when: paru_check.rc != 0
 
-# ------------------------------------------------------------
-# Passwordless sudo for pacman (required for paru/AUR installs)
-# ------------------------------------------------------------
 
-- name: Allow joseph passwordless sudo for pacman
-  ansible.builtin.copy:
-    dest: /etc/sudoers.d/joseph-pacman
-    content: "joseph ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
-    mode: '0440'
-    validate: 'visudo -cf %s'
 
 # ------------------------------------------------------------
 # Locale
@@ -222,3 +225,21 @@
       --latest 25
       --sort rate
     mode: '0644'
+
+# ------------------------------------------------------------
+# Enable the multilib repository in pacman.conf
+# ------------------------------------------------------------
+- name: Enable the multilib repository in pacman.conf
+  community.general.ini_file:
+    path: /etc/pacman.conf
+    state: present
+    section: multilib
+    option: Include
+    value: /etc/pacman.d/mirrorlist
+    no_extra_spaces: yes
+  become: yes
+
+- name: Update pacman cache
+  community.general.pacman:
+    update_cache: yes
+  become: yes

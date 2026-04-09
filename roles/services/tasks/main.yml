@@ -14,7 +14,7 @@
     - NetworkManager-dispatcher
     - avahi-daemon
     - docker
-    - sddm
+    - plasmalogin
     - reflector.timer
     - systemd-resolved
     - systemd-timesyncd
@@ -133,8 +133,11 @@
       ## 3. Obsidian — Enable Local REST API Plugin
       - Open Obsidian and select the **Master-Mind** vault
       - Settings → Community Plugins → Enable **Local REST API**
-      - Verify: `curl http://localhost:27124`
-      - Then: `systemctl --user restart obsidian-http-mcp`
+      - Copy the API key from Local REST API plugin settings
+      - Verify: `curl http://localhost:27123`
+      - Run setup: `obsidian-http-mcp --setup` (paste the API key when prompted)
+      - Restart the MCP bridge: `systemctl --user restart obsidian-http-mcp`
+      - Verify bridge: `curl http://localhost:3000/mcp` (should return MCP response)
 
       ## 4. Claude Code — Authenticate and Register MCP
       ```
@@ -142,7 +145,17 @@
       claude mcp add obsidian-http -s user --transport http http://localhost:3000/mcp
       ```
 
-      ## 5. Gemini CLI — Authenticate
+      ## 5. Printer — Canon TR4700 Setup
+      KDE Plasma's printer utility does NOT work for this printer.
+      Use the CUPS web interface instead:
+      1. Open `http://localhost:631/admin`
+      2. Log in as **root**
+      3. Click **Add Printer**
+      4. Select the discovered **Canon TR4700 series**
+      5. Choose **IPP Everywhere** as the driver
+      6. Finish the wizard
+
+      ## 6. Gemini CLI — Authenticate
       ```
       gemini
       ```
