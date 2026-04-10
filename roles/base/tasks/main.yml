@@ -54,6 +54,7 @@
       - dkms
       - zram-generator
       - efibootmgr
+      - imagemagick
     state: present
 
 # ------------------------------------------------------------
@@ -170,15 +171,60 @@
     mode: '0644'
 
 # ------------------------------------------------------------
-# GRUB bootloader
+# Bootloader
 # ------------------------------------------------------------
 
 - name: Install GRUB
   community.general.pacman:
     name:
       - grub
-      - os-prober
     state: present
+  when: bootloader == 'grub'
+
+- name: Install rEFInd
+  community.general.pacman:
+    name: refind
+    state: present
+  when: bootloader == 'refind'
+
+- name: Run refind-install (first-time EFI setup)
+  ansible.builtin.command:
+    cmd: refind-install
+    creates: /boot/EFI/refind/refind_x64.efi
+  when: bootloader == 'refind'
+
+- name: Deploy refind.conf
+  ansible.builtin.template:
+    src: refind.conf.j2
+    dest: /boot/EFI/refind/refind.conf
+    mode: '0644'
+  when: bootloader == 'refind'
+
+- name: Clone rEFInd-minimal theme
+  become: false
+  ansible.builtin.git:
+    repo: https://github.com/evanpurkhiser/rEFInd-minimal.git
+    dest: /tmp/rEFInd-minimal
+    depth: 1
+    update: false
+  when: bootloader == 'refind'
+
+- name: Sync rEFInd-minimal theme files to ESP
+  ansible.builtin.command:
+    cmd: rsync -r --no-perms --no-owner --no-group --exclude=background.png --exclude='.git' /tmp/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
+  changed_when: false
+  when: bootloader == 'refind'
+
+- name: Convert and copy rEFInd background image
+  ansible.builtin.command:
+    cmd: >
+      convert '{{ refind_background_src }}'
+      -resize 1920x1200^
+      -gravity center
+      -extent 1920x1200
+      /boot/EFI/refind/themes/rEFInd-minimal/background.png
+    creates: /boot/EFI/refind/themes/rEFInd-minimal/background.png
+  when: bootloader == 'refind'
 
 # ------------------------------------------------------------
 # btrfs tools and snapper (btrfs only)
@@ -188,7 +234,6 @@
   community.general.pacman:
     name:
       - btrfs-progs
-      - grub-btrfs
     state: present
   when: btrfs | bool
 

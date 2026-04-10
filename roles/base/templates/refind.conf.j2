@@ -1,0 +1,9 @@
+timeout 15
+use_nvram false
+use_graphics_for osx,linux,windows
+default_selection "{{ refind_default_selection }}"
+showtools shutdown,reboot,firmware
+dont_scan_dirs EFI/BOOT,EFI/GRUB,EFI/Manjaro,EFI/Insyde
+dont_scan_files +,bootx64.efi,grubx64.efi,arch-linux.efi,arch-linux-lts.efi,arch-linux-hardened.efi,vmlinuz-linux,vmlinuz-linux-zen,vmlinuz-linux-lts,vmlinuz-linux-hardened
+extra_kernel_version_strings "linux-hardened,linux-rt-lts,linux-zen,linux-lts,linux-rt,linux"
+include themes/rEFInd-minimal/theme.conf

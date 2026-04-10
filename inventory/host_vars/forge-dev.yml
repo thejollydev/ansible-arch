@@ -31,6 +31,9 @@ node_exporter: true
 plymouth: false
 btrfs: false
 
+# Bootloader
+bootloader: grub
+
 # Dotfiles stow packages
 dotfiles_packages:
   - zsh

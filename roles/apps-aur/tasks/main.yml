@@ -14,3 +14,11 @@
       - antigravity
     state: present
     use: paru
+
+- name: Install refind-btrfs (snapshot boot entries for rEFInd)
+  become: false
+  kewlfft.aur.aur:
+    name: refind-btrfs
+    state: present
+    use: paru
+  when: bootloader == 'refind' and btrfs | bool
