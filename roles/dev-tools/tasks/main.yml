@@ -4,6 +4,8 @@
     name:
       - git
       - github-cli
+      - glab
+      - tea
       - docker
       - docker-compose
       - go
