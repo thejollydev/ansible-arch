@@ -7,7 +7,7 @@ hostname: jolly-LOQ-arch
 timezone: America/Detroit
 locale: en_US.UTF-8
 
-# Kernels (first in list = default GRUB entry)
+# Kernels (first in list = default boot entry)
 kernels:
   - linux-zen
   - linux-zen-headers
@@ -32,6 +32,11 @@ remote_desktop: false
 node_exporter: false
 plymouth: true
 btrfs: true
+
+# Bootloader
+bootloader: refind
+refind_default_selection: arch-linux-zen
+refind_background_src: /home/joseph/GoogleDrive/Pictures/Wallpapers/pexels-mart-production-7577898.jpg
 
 # Dotfiles stow packages
 dotfiles_packages:

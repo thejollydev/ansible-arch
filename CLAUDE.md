@@ -61,11 +61,23 @@ remote_desktop: true
   when: gpu_nvidia | bool
 ```
 
-Available flags: `gpu_nvidia`, `hyprland`, `bluetooth`, `wifi`, `displaylink`, `ios_tools`, `printing`, `insync`, `remote_desktop`, `plymouth`
+Available flags: `gpu_nvidia`, `hyprland`, `bluetooth`, `wifi`, `displaylink`, `ios_tools`, `printing`, `insync`, `remote_desktop`, `plymouth`, `btrfs`, `node_exporter`, `syncthing`
+
+### Bootloader Variable
+
+`bootloader` is a string (not a boolean flag) controlling which bootloader is installed and configured:
+- `refind` — installs rEFInd, deploys `refind.conf` from template, syncs rEFInd-minimal theme, installs `refind-btrfs` (AUR, when `btrfs: true`)
+- `grub` — installs GRUB package only (no `grub-install` automation)
+
+Additional rEFInd host_vars (required when `bootloader: refind`):
+- `refind_default_selection` — kernel name string for `default_selection` in refind.conf
+- `refind_background_src` — absolute path to source image (JPEG/PNG); converted to PNG and copied to ESP
+
+The rEFInd theme (`rEFInd-minimal`) is cloned from GitHub to `/tmp/rEFInd-minimal` on first run (idempotent via `update: false`) and rsynced to `/boot/EFI/refind/themes/rEFInd-minimal/`. The background is only converted once (`creates:` guard).
 
 ### Variables Scope
 
-**No group_vars, no role defaults — all variables live in host_vars.** Variables available to roles: `hostname`, `timezone`, `locale`, `kernels` (list), `dotfiles_packages` (list), and all feature flags above.
+**No group_vars, no role defaults — all variables live in host_vars.** Variables available to roles: `hostname`, `timezone`, `locale`, `kernels` (list), `dotfiles_packages` (list), `bootloader` (string), and all feature flags above.
 
 ### Package Installation Modules
 
