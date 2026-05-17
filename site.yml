@@ -36,6 +36,10 @@
       tags: hardware
     - role: insync
       tags: insync
+    # remote-desktop (XRDP) is being phased out. Standardized choice for
+    # GNOME hosts is `gnome-remote-desktop` (installed at the distro level on
+    # those hosts, not via this role). Kept transitionally for forge-dev (KDE)
+    # until that VM's remote-desktop story is settled.
     - role: remote-desktop
       tags: remote-desktop
     - role: syncthing

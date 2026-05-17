@@ -26,7 +26,7 @@ ios_tools: false
 printing: true
 insync: true
 syncthing: true
-remote_desktop: true
+remote_desktop: true   # XRDP — transitional; remote-desktop story for forge-dev (KDE) is unsettled (task #9)
 node_exporter: true
 plymouth: false
 btrfs: false
