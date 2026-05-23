@@ -5,6 +5,8 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 ![Last Commit](https://img.shields.io/github/last-commit/thejollydev/ansible-arch?style=flat)
 
+**Status:** ✅ Active — rEFInd migration complete 2026-04-10. Vault home: `05_Projects/ansible-arch/`.
+
 Idempotent Ansible playbook for automated Arch Linux workstation provisioning and configuration management.
 
 ## Overview

@@ -1,3 +1,8 @@
+---
+vault_canonical: 05_Projects/ansible-arch/
+vault_mirrors: []
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
