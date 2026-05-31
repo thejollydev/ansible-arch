@@ -12,4 +12,5 @@
       - libreoffice-fresh
       - obsidian
       - vlc
+      - ffmpeg          # CLI media toolkit; backs the `normalize-audio` script (dotfiles bin/)
     state: present
