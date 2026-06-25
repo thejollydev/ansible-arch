@@ -13,7 +13,6 @@ Idempotent Ansible playbook for provisioning and managing Arch Linux workstation
 
 **Targets:**
 - `jolly-LOQ-arch` — physical dev laptop, local connection (NVIDIA, Hyprland, DisplayLink)
-- `forge-dev` — Proxmox KDE VM, SSH connection (XRDP, no GPU)
 
 ## Common Commands
 
@@ -23,13 +22,12 @@ ansible-galaxy collection install -r requirements.yml
 
 # Full run against a single host
 ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass
-ansible-playbook site.yml -l forge-dev --ask-become-pass
 
 # Run a single role by tag
 ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass
 
 # Dry run — see what would change without applying
-ansible-playbook site.yml -l forge-dev --check --diff --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass
 
 # List all tasks
 ansible-playbook site.yml --list-tasks
@@ -51,7 +49,7 @@ The `services` role always runs last — it enables systemd services for everyth
 Host differences are controlled by boolean flags in `inventory/host_vars/<hostname>.yml`. Roles check these at the task level with `when: <flag> | bool`. Always use the `| bool` filter.
 
 ```yaml
-# In inventory/host_vars/forge-dev.yml
+# In inventory/host_vars/<hostname>.yml
 gpu_nvidia: false
 hyprland: false
 bluetooth: false

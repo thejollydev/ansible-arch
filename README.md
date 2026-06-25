@@ -17,7 +17,6 @@ A single playbook that fully configures an Arch Linux workstation from a minimal
 | Host | Role | Connection |
 |------|------|------------|
 | `jolly-LOQ-arch` | Physical dev laptop (NVIDIA, Hyprland, DisplayLink) | local |
-| `forge-dev` | Arch Linux KDE VM on Proxmox (XRDP, no GPU) | SSH |
 
 ## Prerequisites
 
@@ -35,13 +34,13 @@ SSH key auth must be configured for any remote hosts.
 
 ```bash
 # Full run against a single host
-ansible-playbook site.yml -l forge-dev --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass
 
 # Single role
 ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass
 
 # Dry run — see what would change without applying
-ansible-playbook site.yml -l forge-dev --check --diff --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass
 
 # List all tasks
 ansible-playbook site.yml --list-tasks
@@ -76,7 +75,7 @@ ansible-playbook site.yml --list-tasks
 Machine differences are controlled by feature flags in `inventory/host_vars/`. Each role checks its relevant flag before running:
 
 ```yaml
-# inventory/host_vars/forge-dev.yml (excerpt)
+# inventory/host_vars/<hostname>.yml (excerpt)
 gpu_nvidia: false
 hyprland: false
 bluetooth: false
@@ -95,8 +94,7 @@ ansible-arch/
 ├── inventory/
 │   ├── hosts.yml
 │   └── host_vars/
-│       ├── jolly-LOQ-arch.yml
-│       └── forge-dev.yml
+│       └── jolly-LOQ-arch.yml
 ├── roles/
 │   └── <role>/tasks/main.yml
 ├── site.yml
