@@ -76,6 +76,30 @@
     # ------------------------------------------------------------
 # Passwordless sudo for pacman (required for paru/AUR installs)
 # ------------------------------------------------------------
+#
+# WHY THIS IS DEFENSIBLE FOR BOOTSTRAP (reviewed 2026-08-02, BezaForge #618):
+#
+# This grant is scoped to /usr/bin/pacman only -- not blanket NOPASSWD -- and it
+# exists because paru shells out to pacman to install what it has just built. An
+# unattended run cannot answer a password prompt, so without this the whole
+# apps-aur layer stops dead partway through a rebuild.
+#
+# It is NOT a security control and must not be mistaken for one: anyone who can
+# run pacman as root can install an arbitrary package, which is root. The grant
+# does not WIDEN the trust boundary though -- it only removes an interactive
+# prompt in front of a decision the operator (the sole user of this laptop) has
+# already made by invoking the playbook. The real checkpoint against a hostile
+# PKGBUILD is paru's PKGBUILD review step, which is ON by default and which we
+# deliberately keep on below -- see the paru.conf block.
+#
+# If this laptop ever gains a second non-admin user, or the playbook is ever run
+# from a source other than Joseph's own workstation, revisit this: the honest
+# alternative is prompting once with --ask-become-pass and dropping this file.
+#
+# Same reasoning covers the `makepkg -si --noconfirm` in the paru bootstrap task
+# below -- there is no paru yet at that point, so that one build is necessarily
+# unreviewed. It is pinned to the official AUR paru repo and happens exactly
+# once, before any other AUR package exists on the box.
 
 - name: Allow joseph passwordless sudo for pacman
   ansible.builtin.copy:
@@ -111,6 +135,40 @@
     creates: /usr/bin/paru
   when: paru_check.rc != 0
 
+
+# ------------------------------------------------------------
+# paru supply-chain hardening (BezaForge #618, 2026-08-02)
+# ------------------------------------------------------------
+#
+# Context: the June 2026 AUR incident (Arch advisory 2026-06-12) worked by
+# ADOPTING orphaned AUR packages and adding build-time hooks. Arch's own
+# guidance was to review every PKGBUILD and .install diff before upgrading.
+#
+# paru reviews PKGBUILDs BY DEFAULT. The opt-out is `SkipReview`, so the thing
+# that actually guarantees the checkpoint is the ABSENCE of that option -- which
+# is why the task below asserts it is absent rather than asserting some positive
+# flag is present. Assert the mechanism, not the artifact.
+
+- name: Ensure paru PKGBUILD review is NOT disabled
+  ansible.builtin.lineinfile:
+    path: /etc/paru.conf
+    regexp: '^\s*SkipReview\s*$'
+    state: absent
+
+- name: Enable paru security-relevant options
+  ansible.builtin.lineinfile:
+    path: /etc/paru.conf
+    line: "{{ item }}"
+    insertafter: '^\[options\]'
+    state: present
+  loop:
+    # Prints new Arch news during sysupgrade. The 2026-06-12 "Active AUR
+    # malicious packages incident" advisory would have surfaced here
+    # automatically, before the upgrade ran, not weeks later.
+    - NewsOnUpgrade
+    # Detailed upgrade list with the ability to skip individual packages --
+    # makes an unexpected package appearing in an upgrade set visible.
+    - UpgradeMenu
 
 
 # ------------------------------------------------------------

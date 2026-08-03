@@ -30,6 +30,8 @@
       tags: apps
     - role: apps-aur
       tags: apps-aur
+    - role: aur-audit
+      tags: aur-audit
     - role: printing
       tags: printing
     - role: hardware
