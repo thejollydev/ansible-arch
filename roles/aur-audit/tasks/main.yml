@@ -10,6 +10,12 @@
 # notification. A silent clean run leaves a log you can check; a run that finds
 # maintainer churn interrupts you, because that is the signal that mattered in
 # the June 2026 campaign.
+#
+# NOTE ON PATHS: this play runs with `become: true`, so fact gathering happens
+# as root and `ansible_env.HOME` is /root -- NOT the target user's home. Every
+# user-level path below is therefore written out explicitly, matching the
+# convention already used by roles/dotfiles, roles/dev-tools and roles/services.
+# (A first cut used ansible_env.HOME and failed creating /root/.config.)
 
 - name: Install aur-audit script
   ansible.builtin.copy:
@@ -19,24 +25,23 @@
     group: root
     mode: '0755'
 
-- name: Ensure user systemd directory exists
+# ansible.builtin.copy does NOT create parent directories, so every directory
+# the wrapper and unit files land in has to be created first.
+- name: Ensure user directories exist
   become: false
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/systemd/user"
+    path: "{{ item }}"
     state: directory
     mode: '0755'
-
-- name: Ensure aur-audit log directory exists
-  become: false
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.local/state/aur-audit"
-    state: directory
-    mode: '0755'
+  loop:
+    - /home/joseph/.config/systemd/user
+    - /home/joseph/.local/bin
+    - /home/joseph/.local/state/aur-audit
 
 - name: Install aur-audit wrapper (logs always, notifies only on findings)
   become: false
   ansible.builtin.copy:
-    dest: "{{ ansible_env.HOME }}/.local/bin/aur-audit-run"
+    dest: /home/joseph/.local/bin/aur-audit-run
     mode: '0755'
     content: |
       #!/usr/bin/env bash
@@ -57,12 +62,12 @@
         # Findings. Make it impossible to miss.
         command -v notify-send >/dev/null && \
           notify-send -u critical "AUR audit: findings" \
-            "Maintainer churn or IOCs detected. Review: $LOGDIR/latest.log"
-        logger -t aur-audit -p security.warning "AUR audit findings — see $LOG"
+            "Maintainer churn or IOCs detected. See $LOGDIR/latest.log"
+        logger -t aur-audit -p security.warning "AUR audit findings - see $LOG"
       elif [[ $rc -eq 2 ]]; then
         command -v notify-send >/dev/null && \
           notify-send -u critical "AUR audit: ERROR" "Audit failed. See $LOG"
-        logger -t aur-audit -p security.err "AUR audit failed to run — see $LOG"
+        logger -t aur-audit -p security.err "AUR audit failed to run - see $LOG"
       else
         logger -t aur-audit -p security.info "AUR audit clean"
       fi
@@ -71,7 +76,7 @@
 - name: Install aur-audit systemd user service
   become: false
   ansible.builtin.copy:
-    dest: "{{ ansible_env.HOME }}/.config/systemd/user/aur-audit.service"
+    dest: /home/joseph/.config/systemd/user/aur-audit.service
     mode: '0644'
     content: |
       [Unit]
@@ -85,7 +90,7 @@
 - name: Install aur-audit systemd user timer
   become: false
   ansible.builtin.copy:
-    dest: "{{ ansible_env.HOME }}/.config/systemd/user/aur-audit.timer"
+    dest: /home/joseph/.config/systemd/user/aur-audit.timer
     mode: '0644'
     content: |
       [Unit]
@@ -101,7 +106,7 @@
 
 - name: Enable and start aur-audit timer
   become: false
-  ansible.builtin.systemd_service:
+  ansible.builtin.systemd:
     name: aur-audit.timer
     enabled: true
     state: started
