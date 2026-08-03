@@ -1,0 +1,109 @@
+---
+# aur-audit — scheduled AUR supply-chain audit (BezaForge #618, 2026-08-02)
+#
+# Installs aur-audit.sh and runs it weekly as a USER timer. It is a user timer,
+# not a system one, because the paru clone cache lives in ~/.cache/paru and the
+# audit is entirely read-only -- it needs no privilege at all.
+#
+# The reminder mechanism is deliberately two-layer: the run always writes a
+# timestamped log, and a run WITH FINDINGS additionally raises a desktop
+# notification. A silent clean run leaves a log you can check; a run that finds
+# maintainer churn interrupts you, because that is the signal that mattered in
+# the June 2026 campaign.
+
+- name: Install aur-audit script
+  ansible.builtin.copy:
+    src: aur-audit.sh
+    dest: /usr/local/bin/aur-audit
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Ensure user systemd directory exists
+  become: false
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Ensure aur-audit log directory exists
+  become: false
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.local/state/aur-audit"
+    state: directory
+    mode: '0755'
+
+- name: Install aur-audit wrapper (logs always, notifies only on findings)
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.local/bin/aur-audit-run"
+    mode: '0755'
+    content: |
+      #!/usr/bin/env bash
+      # Wrapper for the aur-audit user timer. Managed by ansible-arch.
+      set -uo pipefail
+      LOGDIR="$HOME/.local/state/aur-audit"
+      mkdir -p "$LOGDIR"
+      LOG="$LOGDIR/$(date +%Y-%m-%d).log"
+
+      /usr/local/bin/aur-audit --days 30 > "$LOG" 2>&1
+      rc=$?
+
+      ln -sfn "$LOG" "$LOGDIR/latest.log"
+      # keep 12 weeks of logs, drop the rest
+      ls -1t "$LOGDIR"/20*.log 2>/dev/null | tail -n +13 | xargs -r rm -f
+
+      if [[ $rc -eq 1 ]]; then
+        # Findings. Make it impossible to miss.
+        command -v notify-send >/dev/null && \
+          notify-send -u critical "AUR audit: findings" \
+            "Maintainer churn or IOCs detected. Review: $LOGDIR/latest.log"
+        logger -t aur-audit -p security.warning "AUR audit findings — see $LOG"
+      elif [[ $rc -eq 2 ]]; then
+        command -v notify-send >/dev/null && \
+          notify-send -u critical "AUR audit: ERROR" "Audit failed. See $LOG"
+        logger -t aur-audit -p security.err "AUR audit failed to run — see $LOG"
+      else
+        logger -t aur-audit -p security.info "AUR audit clean"
+      fi
+      exit 0
+
+- name: Install aur-audit systemd user service
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/aur-audit.service"
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=AUR supply-chain audit (maintainer churn + IOC scan)
+      Documentation=https://archlinux.org/news/active-aur-malicious-packages-incident/
+
+      [Service]
+      Type=oneshot
+      ExecStart=%h/.local/bin/aur-audit-run
+
+- name: Install aur-audit systemd user timer
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/aur-audit.timer"
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Weekly AUR supply-chain audit
+
+      [Timer]
+      OnCalendar=Mon 09:00
+      Persistent=true
+      RandomizedDelaySec=15m
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Enable and start aur-audit timer
+  become: false
+  ansible.builtin.systemd_service:
+    name: aur-audit.timer
+    enabled: true
+    state: started
+    scope: user
+    daemon_reload: true
