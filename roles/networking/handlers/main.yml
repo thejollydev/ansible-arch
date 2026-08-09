@@ -1,0 +1,8 @@
+---
+# `device reapply` pushes the updated profile onto the live device WITHOUT
+# dropping the link — unlike `nmcli con up`, which briefly disconnects the
+# very interface this play is most likely running over.
+- name: Reapply networkmanager connection
+  ansible.builtin.command:
+    cmd: nmcli device reapply {{ ansible_facts['default_ipv4']['interface'] }}
+  changed_when: true

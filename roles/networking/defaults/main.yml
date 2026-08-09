@@ -1,0 +1,57 @@
+---
+# ============================================================
+# networking role defaults
+# ============================================================
+
+# ------------------------------------------------------------
+# DNS resilience on the home network (BezaForge #638)
+# ------------------------------------------------------------
+# The workstation used to resolve through a SINGLE server — AdGuard on
+# forge-ops (10.10.20.20), handed out by DHCP. When AdGuard went down the
+# laptop lost DNS completely, while every fleet host stayed up. It was the
+# least redundant machine on the network.
+#
+# It now carries both internal-aware servers, matching the fleet:
+#   10.10.20.20 — AdGuard on forge-ops. Primary. Ad-blocking + DoH upstream.
+#   10.10.10.10 — dnsmasq on forge-hypervisor. Secondary, same internal zone.
+#
+# Verified 2026-08-09 with AdGuard genuinely stopped: an UNCACHEABLE probe
+# name resolved in 83 ms via the secondary, internal and external both fine.
+#
+# ⚠️ WHY PER-CONNECTION AND NOT NetworkManager's [global-dns]:
+# global-dns overrides DNS on EVERY network, so on coffee-shop WiFi the
+# laptop would still insist on 10.10.20.20 — unreachable — and have no DNS
+# at all while travelling. Only home WiFi and the WireGuard tunnel get this;
+# every other profile keeps whatever that network provides.
+#
+# ⚠️ WHY dns-search IS SET EXPLICITLY:
+# `ipv4.ignore-auto-dns yes` discards the DHCP-supplied SEARCH DOMAIN along
+# with the DHCP nameservers. Setting the servers without also setting the
+# search domain broke every bare hostname (`ssh forge-ai`) on 2026-08-09.
+# The two must move together.
+networking_dns_manage: true
+
+networking_dns_servers:
+  - 10.10.20.20
+  - 10.10.10.10
+
+networking_dns_search: bezaforge.dev
+
+# glibc/resolved default is a 5s timeout with 2 attempts per server, so a
+# plain failover costs ~10s. This brings it to roughly 2s.
+networking_dns_options: "timeout:2,attempts:1"
+
+# Matched by connection NAME, then resolved to UUIDs at run time — there are
+# TWO profiles named "The Bunker" (one stale, both autoconnect=yes), so a
+# name-only `nmcli con mod` is ambiguous and warns. Resolving to UUIDs
+# applies the setting to every matching profile, including the stale one, so
+# whichever wins the race carries the fix.
+#
+# ignore_auto_dns matters only for DHCP profiles: it stops the router's
+# single-server list from overriding ours. WireGuard is method=manual and
+# has no DHCP to ignore.
+networking_dns_connections:
+  - name: "The Bunker"
+    ignore_auto_dns: true
+  - name: "BezaForgeWG"
+    ignore_auto_dns: false
