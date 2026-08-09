@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Antigravity 2.0
+GenericName=Agent Orchestration Platform
+Comment=Run and monitor multiple autonomous agents in parallel
+Exec={{ ai_tools_opt }}/antigravity/antigravity %U
+Terminal=false
+Categories=Development;
+Keywords=agent;ai;google;antigravity;
+StartupNotify=true
+# The tarball ships no icon file — Antigravity 2.0 keeps its icon inside
+# resources/app.asar, so there is nothing on disk to point at. A name is used
+# here so the entry stays valid; the launcher falls back to a generic icon
+# until one is extracted to ~/.local/share/icons/. Cosmetic only.
+Icon=antigravity

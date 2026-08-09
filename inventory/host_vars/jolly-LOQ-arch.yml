@@ -19,6 +19,7 @@ kernels:
   - linux-headers
 
 # Feature flags
+ai_tools: true
 gpu_nvidia: true
 hyprland: true
 bluetooth: true
@@ -47,5 +48,7 @@ dotfiles_packages:
   - zellij
   - nvim
   - claude
-  - gemini
   - systemd
+# `gemini` removed 2026-08-08: Gemini CLI was retired for personal accounts on
+# 2026-06-18 and the stow package was deleted from the dotfiles repo. Antigravity
+# CLI owns ~/.gemini now and manages it itself — it must NOT be stow-managed.

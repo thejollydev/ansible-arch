@@ -61,6 +61,7 @@ ansible-playbook site.yml --list-tasks
 | `terminal` | kitty, zellij, tmux | — |
 | `editor` | Neovim | — |
 | `dev-tools` | git, docker, languages, CLI utilities | — |
+| `ai-tools` | Antigravity CLI (`agy`), Antigravity 2.0, Antigravity IDE, Codex CLI. Install-if-absent — all four self-update, so pinned versions are bootstrap only. Auth is never automated; see `~/POST-INSTALL.md` | `ai_tools` |
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
 | `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, etc. | — |
 | `printing` | CUPS, sane-airscan, Canon PIXMA driver | `printing` |

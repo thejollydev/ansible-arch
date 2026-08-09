@@ -1,0 +1,36 @@
+---
+# ------------------------------------------------------------
+# AI coding CLIs and desktop agents — pinned bootstrap versions
+# ------------------------------------------------------------
+# ⚠️ These are BOOTSTRAP versions, not maintained ones. Every tool in this
+# role updates itself after install, so the pins below are only what a bare
+# metal rebuild starts from. Do not treat a newer installed version as drift.
+#
+# Verified 2026-08-08 against https://antigravity.google/download.
+# Both URLs are static CDN paths — no signature, token, or expiry parameter —
+# and the checksums were taken from downloads that matched the advertised
+# content-length byte for byte.
+
+antigravity_hub_version: "2.6.0"
+antigravity_hub_url: "https://storage.googleapis.com/antigravity-public/antigravity-hub/2.6.0-4603467860410368/linux-x64/Antigravity.tar.gz"
+antigravity_hub_sha256: "cb98aff00dbad4e718b7fb2d95fef531b7dd30f985531e6c844b42aaf67df431"
+
+antigravity_ide_version: "2.1.1"
+antigravity_ide_url: "https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/2.1.1-6123990880747520/linux-x64/Antigravity%20IDE.tar.gz"
+antigravity_ide_sha256: "5b2cebf7d33a68d003fd8f1fa988d1600905ace22504a085e5384214290878bd"
+
+antigravity_cli_installer: "https://antigravity.google/cli/install.sh"
+
+# User-local install roots. Explicit paths, never ansible_env.HOME — site.yml
+# runs with play-level `become: true`, so facts are gathered as root and
+# ansible_env.HOME resolves to /root (see the aur-audit fix, commit 4d4af10).
+ai_tools_user: joseph
+ai_tools_home: /home/joseph
+ai_tools_opt: /home/joseph/.local/opt
+ai_tools_bin: /home/joseph/.local/bin
+ai_tools_desktop: /home/joseph/.local/share/applications
+
+# Global npm packages that are AI CLIs. Kept here rather than in dev-tools so
+# every AI tool is reachable under one --tags ai-tools.
+ai_tools_npm_packages:
+  - "@openai/codex"
