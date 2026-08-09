@@ -18,3 +18,91 @@
       - wireless_tools
     state: present
   when: wifi | bool
+# ------------------------------------------------------------
+# DNS resilience on the home network (BezaForge #638)
+# ------------------------------------------------------------
+# See defaults/main.yml for the rationale: why this is per-connection
+# rather than NetworkManager [global-dns], and why the search domain
+# must be set alongside the servers.
+- name: Configure resilient DNS on home + VPN profiles
+  when: networking_dns_manage | bool
+  block:
+
+    - name: List NetworkManager connections
+      ansible.builtin.command:
+        cmd: nmcli -t -f UUID,NAME connection show
+      register: networking_nm_conns
+      changed_when: false
+      # Names are NOT unique — there are two profiles named "The Bunker",
+      # so `nmcli con mod "The Bunker"` is ambiguous and warns. Profiles
+      # are addressed by UUID and every match is updated, which also means
+      # the stale duplicate carries the fix if it ever wins autoconnect.
+
+    - name: Select the UUIDs of the managed connections
+      ansible.builtin.set_fact:
+        networking_dns_uuids: >-
+          {{ networking_nm_conns.stdout_lines
+             | map('split', ':')
+             | selectattr('1', 'in', _names)
+             | map(attribute=0) | list }}
+      vars:
+        _names: "{{ networking_dns_connections | map(attribute='name') }}"
+
+    - name: Report how many profiles matched
+      ansible.builtin.debug:
+        msg: >-
+          {{ networking_dns_uuids | length }} profile(s) matched
+          {{ networking_dns_connections | map(attribute='name') | list }}
+      # A silent zero-match looks exactly like success. If this reports 0,
+      # the names in defaults no longer match reality.
+
+    - name: Read current DNS settings per profile
+      ansible.builtin.command:
+        cmd: >-
+          nmcli --escape no -g
+          ipv4.dns,ipv4.dns-search,ipv4.dns-options,ipv4.ignore-auto-dns
+          connection show {{ item }}
+      loop: "{{ networking_dns_uuids }}"
+      register: networking_dns_current
+      changed_when: false
+      # ⚠️ `--escape no` is LOAD-BEARING. In terse mode `:` is the field
+      # separator, so nmcli escapes literal colons in values and returns
+      # `timeout\:2,attempts\:1`. Comparing that against the unescaped
+      # desired value never matches, so this task reported `changed` on
+      # every run and the role could never be a no-op. Caught 2026-08-09
+      # on the first real run — the values were already correct and it
+      # still claimed to change them.
+
+    - name: Apply DNS settings only where they differ
+      ansible.builtin.command:
+        cmd: >-
+          nmcli connection modify {{ item.item }}
+          ipv4.dns "{{ networking_dns_servers | join(',') }}"
+          ipv4.dns-search "{{ networking_dns_search }}"
+          ipv4.dns-options "{{ networking_dns_options }}"
+          ipv4.ignore-auto-dns {{ 'yes' if _ignore else 'no' }}
+      vars:
+        _name: >-
+          {{ (networking_nm_conns.stdout_lines
+              | select('search', '^' ~ item.item ~ ':')
+              | first).split(':')[1] }}
+        _ignore: >-
+          {{ (networking_dns_connections
+              | selectattr('name', 'equalto', _name)
+              | first).ignore_auto_dns | bool }}
+        _desired:
+          - "{{ networking_dns_servers | join(',') }}"
+          - "{{ networking_dns_search }}"
+          - "{{ networking_dns_options }}"
+          - "{{ 'yes' if _ignore else 'no' }}"
+      loop: "{{ networking_dns_current.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stdout_lines != _desired
+      changed_when: true
+      notify: Reapply networkmanager connection
+      # `nmcli con mod` always exits 0 whether or not it changed anything,
+      # so the `when:` comparison is what keeps this honest — without it
+      # every run reports changed and the play is never a true no-op.
+      # `changed_when: true` is therefore correct: the task only runs at
+      # all when the live settings already differ from the desired ones.
