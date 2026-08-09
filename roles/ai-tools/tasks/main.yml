@@ -1,0 +1,221 @@
+---
+# ------------------------------------------------------------
+# AI coding CLIs and desktop agents
+# ------------------------------------------------------------
+# Covers: Antigravity CLI (agy) · Antigravity 2.0 · Antigravity IDE · Codex CLI.
+#
+# ⚠️ INSTALL-IF-ABSENT, NEVER CONVERGE-TO-VERSION.
+# Every tool here ships a self-updater. If these tasks asserted the pinned
+# version they would DOWNGRADE a self-updated install on every playbook run.
+# The guards below all key on "is the launcher present", not "is it version X".
+#
+# ⚠️ AUTHENTICATION IS DELIBERATELY NOT AUTOMATED.
+# Driving a vendor's authenticated client from a script is a terms problem,
+# not merely an inconvenient one. This role installs; the human logs in. The
+# required logins are written to ~/POST-INSTALL.md by the `services` role.
+
+# check_mode: false on every directory-creation task in this role.
+#
+# `unarchive` with --strip-components requires dest to be an EXISTING dir, so
+# under --check the mkdir is only simulated and every extract task then fails
+# with "must be an existing dir". A dry run that always fails at the same spot
+# is worse than no dry run: it teaches you to skip reading them. Creating an
+# empty directory is harmless and idempotent, and it is what makes --check able
+# to validate the tasks that actually matter (downloads, checksums, templates).
+- name: Ensure user-local install directories exist
+  become: false
+  check_mode: false
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ai_tools_bin }}"
+    - "{{ ai_tools_opt }}"
+    - "{{ ai_tools_desktop }}"
+
+# ------------------------------------------------------------
+# Antigravity CLI (agy)
+# ------------------------------------------------------------
+
+- name: Check whether Antigravity CLI is already installed
+  become: false
+  ansible.builtin.stat:
+    path: "{{ ai_tools_bin }}/agy"
+  register: agy_installed
+
+- name: Install Antigravity CLI
+  when: not agy_installed.stat.exists
+  block:
+    - name: Fetch the Antigravity CLI installer
+      become: false
+      ansible.builtin.get_url:
+        url: "{{ antigravity_cli_installer }}"
+        dest: /tmp/agy-install.sh
+        mode: "0755"
+
+    # ⚠️ --skip-path and --skip-aliases are MANDATORY, not tidiness.
+    # The installer appends a PATH export to .bashrc, .zshrc, .bash_profile
+    # AND .profile. ~/.zshrc is stow-managed by the `dotfiles` role and
+    # already exports ~/.local/bin, so without these flags this role and the
+    # dotfiles role fight on every run and a duplicate PATH entry accretes.
+    - name: Run the Antigravity CLI installer without touching shell profiles
+      become: false
+      ansible.builtin.command:
+        cmd: /tmp/agy-install.sh --skip-path --skip-aliases
+        creates: "{{ ai_tools_bin }}/agy"
+
+    - name: Remove the installer
+      become: false
+      ansible.builtin.file:
+        path: /tmp/agy-install.sh
+        state: absent
+
+# ------------------------------------------------------------
+# Antigravity 2.0 (agent orchestration desktop — no code editor)
+# ------------------------------------------------------------
+
+- name: Check whether Antigravity 2.0 is already installed
+  become: false
+  ansible.builtin.stat:
+    path: "{{ ai_tools_opt }}/antigravity/antigravity"
+  register: antigravity_hub_installed
+
+- name: Install Antigravity 2.0
+  when: not antigravity_hub_installed.stat.exists
+  block:
+    - name: Download the Antigravity 2.0 tarball
+      become: false
+      ansible.builtin.get_url:
+        url: "{{ antigravity_hub_url }}"
+        dest: /tmp/antigravity-hub.tar.gz
+        checksum: "sha256:{{ antigravity_hub_sha256 }}"
+        mode: "0644"
+
+    - name: Create the Antigravity 2.0 install directory
+      become: false
+      check_mode: false
+      ansible.builtin.file:
+        path: "{{ ai_tools_opt }}/antigravity"
+        state: directory
+        mode: "0755"
+
+    # The archive's top level is "Antigravity-x64/"; strip it so the install
+    # path is a stable lowercase name we control rather than a vendor string
+    # that changes with the architecture.
+    - name: Extract Antigravity 2.0
+      become: false
+      ansible.builtin.unarchive:
+        src: /tmp/antigravity-hub.tar.gz
+        dest: "{{ ai_tools_opt }}/antigravity"
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Remove the Antigravity 2.0 tarball
+      become: false
+      ansible.builtin.file:
+        path: /tmp/antigravity-hub.tar.gz
+        state: absent
+
+# ------------------------------------------------------------
+# Antigravity IDE (the editor — a separate product from 2.0)
+# ------------------------------------------------------------
+
+- name: Check whether Antigravity IDE is already installed
+  become: false
+  ansible.builtin.stat:
+    path: "{{ ai_tools_opt }}/antigravity-ide/antigravity-ide"
+  register: antigravity_ide_installed
+
+- name: Install Antigravity IDE
+  when: not antigravity_ide_installed.stat.exists
+  block:
+    - name: Download the Antigravity IDE tarball
+      become: false
+      ansible.builtin.get_url:
+        url: "{{ antigravity_ide_url }}"
+        dest: /tmp/antigravity-ide.tar.gz
+        checksum: "sha256:{{ antigravity_ide_sha256 }}"
+        mode: "0644"
+
+    - name: Create the Antigravity IDE install directory
+      become: false
+      check_mode: false
+      ansible.builtin.file:
+        path: "{{ ai_tools_opt }}/antigravity-ide"
+        state: directory
+        mode: "0755"
+
+    # Top level is "Antigravity IDE/" — with a space. Stripping it removes the
+    # need to quote this path anywhere downstream.
+    - name: Extract Antigravity IDE
+      become: false
+      ansible.builtin.unarchive:
+        src: /tmp/antigravity-ide.tar.gz
+        dest: "{{ ai_tools_opt }}/antigravity-ide"
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Remove the Antigravity IDE tarball
+      become: false
+      ansible.builtin.file:
+        path: /tmp/antigravity-ide.tar.gz
+        state: absent
+
+# ------------------------------------------------------------
+# Launchers on PATH
+# ------------------------------------------------------------
+# For the IDE this links bin/antigravity-ide, not the top-level binary: the
+# bin/ entry is the VS Code-style CLI wrapper meant for terminal use
+# (`antigravity-ide .`), while the top-level binary is what the desktop entry
+# launches.
+
+- name: Link launchers onto PATH
+  become: false
+  ansible.builtin.file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+    force: true
+  loop:
+    - src: "{{ ai_tools_opt }}/antigravity/antigravity"
+      dest: "{{ ai_tools_bin }}/antigravity"
+    - src: "{{ ai_tools_opt }}/antigravity-ide/bin/antigravity-ide"
+      dest: "{{ ai_tools_bin }}/antigravity-ide"
+
+# ------------------------------------------------------------
+# Desktop entries
+# ------------------------------------------------------------
+
+- name: Install desktop entries
+  become: false
+  ansible.builtin.template:
+    src: "{{ item }}.desktop.j2"
+    dest: "{{ ai_tools_desktop }}/{{ item }}.desktop"
+    mode: "0644"
+  loop:
+    - antigravity
+    - antigravity-ide
+
+# ------------------------------------------------------------
+# Codex CLI
+# ------------------------------------------------------------
+# Installed globally with the system npm (matching dev-tools' npm task, which
+# also runs under the play-level become), landing in /usr/lib/node_modules.
+#
+# ⚠️ The scoped name matters. The unscoped `codex` on npm is an unrelated 2012
+# package; installing it is the most common Codex setup failure.
+#
+# ⚠️ Do NOT reintroduce a wrapper shim at ~/.local/bin/codex. One existed until
+# 2026-08-08, injecting a bootstrap prompt that told Codex to read Claude's
+# memory files on every invocation. That bridge was retired in favour of
+# Throughlin, which both tools reach over MCP with provenance on every claim.
+
+- name: Install global AI npm packages
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: present
+  loop: "{{ ai_tools_npm_packages }}"

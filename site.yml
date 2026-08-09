@@ -26,6 +26,9 @@
       tags: editor
     - role: dev-tools
       tags: dev-tools
+    - role: ai-tools
+      tags: ai-tools
+      when: ai_tools | bool
     - role: apps
       tags: apps
     - role: apps-aur
