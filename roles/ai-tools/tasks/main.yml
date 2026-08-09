@@ -14,8 +14,17 @@
 # not merely an inconvenient one. This role installs; the human logs in. The
 # required logins are written to ~/POST-INSTALL.md by the `services` role.
 
+# check_mode: false on every directory-creation task in this role.
+#
+# `unarchive` with --strip-components requires dest to be an EXISTING dir, so
+# under --check the mkdir is only simulated and every extract task then fails
+# with "must be an existing dir". A dry run that always fails at the same spot
+# is worse than no dry run: it teaches you to skip reading them. Creating an
+# empty directory is harmless and idempotent, and it is what makes --check able
+# to validate the tasks that actually matter (downloads, checksums, templates).
 - name: Ensure user-local install directories exist
   become: false
+  check_mode: false
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -85,6 +94,7 @@
 
     - name: Create the Antigravity 2.0 install directory
       become: false
+      check_mode: false
       ansible.builtin.file:
         path: "{{ ai_tools_opt }}/antigravity"
         state: directory
@@ -131,6 +141,7 @@
 
     - name: Create the Antigravity IDE install directory
       become: false
+      check_mode: false
       ansible.builtin.file:
         path: "{{ ai_tools_opt }}/antigravity-ide"
         state: directory
