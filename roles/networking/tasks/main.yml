@@ -33,10 +33,11 @@
         cmd: nmcli -t -f UUID,NAME connection show
       register: networking_nm_conns
       changed_when: false
-      # Names are NOT unique — there are two profiles named "The Bunker",
-      # so `nmcli con mod "The Bunker"` is ambiguous and warns. Profiles
-      # are addressed by UUID and every match is updated, which also means
-      # the stale duplicate carries the fix if it ever wins autoconnect.
+      # NM connection names are not unique — this laptop had two profiles
+      # named "The Bunker" until the stale one was deleted 2026-08-09, which
+      # made `nmcli con mod "The Bunker"` ambiguous and warn. Profiles are
+      # addressed by UUID and EVERY match is updated, so a duplicate that
+      # reappears is covered rather than silently half-configured.
 
     - name: Select the UUIDs of the managed connections
       ansible.builtin.set_fact:

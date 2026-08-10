@@ -41,11 +41,17 @@ networking_dns_search: bezaforge.dev
 # plain failover costs ~10s. This brings it to roughly 2s.
 networking_dns_options: "timeout:2,attempts:1"
 
-# Matched by connection NAME, then resolved to UUIDs at run time — there are
-# TWO profiles named "The Bunker" (one stale, both autoconnect=yes), so a
-# name-only `nmcli con mod` is ambiguous and warns. Resolving to UUIDs
-# applies the setting to every matching profile, including the stale one, so
-# whichever wins the race carries the fix.
+# Matched by connection NAME, then resolved to UUIDs at run time.
+#
+# NM connection names are not unique, and this laptop had proved it: there
+# were TWO profiles named "The Bunker" (both autoconnect=yes), which made a
+# name-only `nmcli con mod` ambiguous and warn. The stale one — last used
+# 2026-04-08 — was deleted 2026-08-09, so only the active profile remains.
+#
+# The UUID resolution stays anyway: it costs nothing, it keeps the role
+# correct if a duplicate reappears (they arrive by accident, e.g. re-entering
+# a PSK), and it means the role updates EVERY matching profile rather than
+# whichever one nmcli happens to pick.
 #
 # ignore_auto_dns matters only for DHCP profiles: it stops the router's
 # single-server list from overriding ours. WireGuard is method=manual and
