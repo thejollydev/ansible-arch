@@ -51,5 +51,9 @@
       when: syncthing | bool
     - role: dotfiles
       tags: dotfiles
+    # After dotfiles: stow owns harness configuration, this role owns system
+    # behaviour (aiw CLI, OKF validators, shared agent skills).
+    - role: ai-workspace
+      tags: ai-workspace
     - role: services
       tags: services
