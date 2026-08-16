@@ -1,0 +1,22 @@
+---
+# AI Workspace system: the `aiw` CLI, the OKF validators, the shared agent
+# skills, and the knowledge vault they operate on.
+aiw_user: joseph
+aiw_home_dir: /home/joseph
+
+aiw_repo: git@github.com:thejollydev/ai-workspace.git
+aiw_repo_dest: /home/joseph/Projects/ai-workspace
+aiw_package_subdir: ai-workspace-system-v2
+
+# The vault is a separate private repo. Cloned only when absent (update: false),
+# never pulled by the playbook — it also syncs continuously via obsidian-git,
+# and a playbook pull would race that.
+aiw_vault_repo: git@github.com:thejollydev/Knowledge-OKF-Vault.git
+aiw_vault_dest: /home/joseph/Vaults/Knowledge
+aiw_clone_vault: true
+
+# link  = the installed location points at the checkout, so the aiw you run is
+#         always the aiw in the repo. Correct for a machine that keeps the
+#         repo, which is every machine Joseph works on.
+# copy  = independent copy; only for a box that will not hold the checkout.
+aiw_install_mode: link

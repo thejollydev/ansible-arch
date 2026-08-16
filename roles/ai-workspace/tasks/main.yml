@@ -1,0 +1,82 @@
+---
+# ------------------------------------------------------------
+# AI Workspace system (aiw CLI + OKF validators + shared agent skills)
+# ------------------------------------------------------------
+# Before this role existed, a rebuilt machine got the OLD agent skills faithfully
+# restored via stow and NONE of the new ones, because nothing told the new box
+# that the ai-workspace repo existed. The system's behaviour lived outside the
+# system that provisions it. This role closes that gap.
+#
+# Runs AFTER `dotfiles`: stow owns harness *configuration*, this role owns
+# system *behaviour*, and the skill links it installs sit beside stow's.
+#
+# ⚠️ CLONE-IF-ABSENT, NEVER PULL. Both repos here are worked in daily and the
+# vault additionally auto-commits via obsidian-git. `update: false` means a
+# playbook run can never clobber or race local work. Updating is a git
+# operation the human does, not a convergence step.
+
+- name: Accept GitHub SSH host key
+  become: false
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 github.com 2>/dev/null') }}"
+    path: "{{ aiw_home_dir }}/.ssh/known_hosts"
+    state: present
+
+- name: Ensure parent directories exist
+  become: false
+  check_mode: false
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ aiw_repo_dest | dirname }}"
+    - "{{ aiw_vault_dest | dirname }}"
+    - "{{ aiw_home_dir }}/.local/bin"
+    - "{{ aiw_home_dir }}/.config/ai-workspace"
+
+- name: Ensure ai-workspace repo is cloned
+  become: false
+  ansible.builtin.git:
+    repo: "{{ aiw_repo }}"
+    dest: "{{ aiw_repo_dest }}"
+    update: false
+    accept_newhostkey: true
+
+- name: Ensure knowledge vault is cloned
+  become: false
+  when: aiw_clone_vault | bool
+  ansible.builtin.git:
+    repo: "{{ aiw_vault_repo }}"
+    dest: "{{ aiw_vault_dest }}"
+    update: false
+    accept_newhostkey: true
+
+# Idempotent: re-running relinks the same paths. In link mode it creates no
+# second copy, so there is nothing that can fall behind the repo.
+- name: Install the aiw kit
+  become: false
+  ansible.builtin.command:
+    cmd: "./scripts/install-ai-workspace-kit.sh --{{ aiw_install_mode }}"
+    chdir: "{{ aiw_repo_dest }}/{{ aiw_package_subdir }}"
+    creates: "{{ aiw_home_dir }}/.local/bin/aiw"
+
+- name: Install shared agent skills and config
+  become: false
+  ansible.builtin.command:
+    cmd: ./scripts/install-shared-config.sh
+    chdir: "{{ aiw_repo_dest }}/{{ aiw_package_subdir }}"
+  changed_when: false
+
+- name: Verify the toolchain resolves
+  become: false
+  ansible.builtin.command:
+    cmd: "{{ aiw_home_dir }}/.local/bin/aiw doctor"
+  register: aiw_doctor
+  changed_when: false
+  failed_when: aiw_doctor.rc != 0
+
+- name: Report installed location
+  ansible.builtin.debug:
+    msg: "{{ aiw_doctor.stdout_lines | select('search', '^(Package|Vault):') | list }}"
