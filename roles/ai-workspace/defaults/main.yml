@@ -6,7 +6,6 @@ aiw_home_dir: /home/joseph
 
 aiw_repo: git@github.com:thejollydev/ai-workspace.git
 aiw_repo_dest: /home/joseph/Projects/ai-workspace
-aiw_package_subdir: ai-workspace-system-v2
 
 # The vault is a separate private repo. Cloned only when absent (update: false),
 # never pulled by the playbook — it also syncs continuously via obsidian-git,

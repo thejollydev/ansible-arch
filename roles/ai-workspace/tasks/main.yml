@@ -59,14 +59,14 @@
   become: false
   ansible.builtin.command:
     cmd: "./scripts/install-ai-workspace-kit.sh --{{ aiw_install_mode }}"
-    chdir: "{{ aiw_repo_dest }}/{{ aiw_package_subdir }}"
+    chdir: "{{ aiw_repo_dest }}"
     creates: "{{ aiw_home_dir }}/.local/bin/aiw"
 
 - name: Install shared agent skills and config
   become: false
   ansible.builtin.command:
     cmd: ./scripts/install-shared-config.sh
-    chdir: "{{ aiw_repo_dest }}/{{ aiw_package_subdir }}"
+    chdir: "{{ aiw_repo_dest }}"
   changed_when: false
 
 - name: Verify the toolchain resolves
