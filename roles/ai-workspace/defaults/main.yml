@@ -14,8 +14,10 @@ aiw_vault_repo: git@github.com:thejollydev/Knowledge-OKF-Vault.git
 aiw_vault_dest: /home/joseph/Vaults/Knowledge
 aiw_clone_vault: true
 
-# worktree = deploy a detached git worktree of origin/main at AIW_HOME; the
-#            live system moves only on merge + redeploy, never with the dev
-#            branch. Correct for every machine that keeps the repo.
-# copy     = independent copy; only for a box that will not hold the checkout.
-aiw_install_mode: worktree
+# link = the CHECKOUT is the live system: ~/.local/bin/aiw and all three harness
+#        skills paths symlink into it, with no deploy step and no second copy.
+#        Correct for every machine that keeps the repo. An edit in the checkout
+#        is live immediately -- that trade is deliberate (ai-workspace decision
+#        0003, which retired the earlier deployment-worktree model).
+# copy = independent copy; only for a box that will not hold the checkout.
+aiw_install_mode: link
