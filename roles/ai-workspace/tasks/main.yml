@@ -55,6 +55,10 @@
 
 # Idempotent: re-running relinks the same paths. In link mode it creates no
 # second copy, so there is nothing that can fall behind the repo.
+#
+# `creates:` guards on the aiw symlink. That is deliberate -- the installer is
+# safe to re-run, but skipping it once the link exists keeps the play quiet on
+# a converged machine. Delete the symlink to force a re-link.
 - name: Install the aiw kit
   become: false
   ansible.builtin.command:
