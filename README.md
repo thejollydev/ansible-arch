@@ -93,7 +93,9 @@ insync: true
 
 No duplicate roles, no separate playbooks — variables drive the differences.
 
-Host flags have no default anywhere: a flag left out of a host_vars file means the role never runs for that host. Role-internal tunables are different and *do* have defaults, in that role's `defaults/main.yml` (`ai-tools`, `ai-workspace`, `networking`).
+Host flags have no default anywhere, and **a flag left out is a hard failure, not a skip** — Ansible treats an undefined variable in a `when:` as fatal, so the play aborts on that host part-way through. Every flag must appear in every host_vars file, including the ones set to `false`.
+
+Role-internal tunables are different and *do* have defaults, in that role's `defaults/main.yml` (`ai-tools`, `ai-workspace`, `networking`).
 
 ## Structure
 

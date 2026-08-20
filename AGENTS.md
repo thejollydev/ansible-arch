@@ -119,7 +119,15 @@ The rEFInd theme (`rEFInd-minimal`) is cloned from GitHub to `/tmp/rEFInd-minima
 | Host feature flags and machine identity | `inventory/host_vars/<host>.yml` | `hostname`, `timezone`, `locale`, `kernels`, `dotfiles_packages`, `bootloader`, every flag above |
 | Role-internal tunables | that role's `defaults/main.yml` | `aiw_install_mode`, `networking_dns_servers`, `antigravity_hub_version` |
 
-Host flags have **no default anywhere** — that is deliberate. An absent flag means the role never runs, rather than silently running with a guessed value.
+Host flags have **no default anywhere** — not in `group_vars`, not via `| default(...)`. Every gate is a bare `when: <flag> | bool`.
+
+⚠️ **An absent flag is a hard failure, not a skip.** Ansible treats an undefined variable in a `when:` as fatal, so the play **aborts on that host mid-run** — after the earlier roles have already applied, leaving the machine half-configured:
+
+```
+fatal: [host]: FAILED! => A 'when' expression failed: 'syncthing' is undefined
+```
+
+That is the intended safety property — a missing flag is loud rather than silently guessed — but it means **every flag must be present in every host_vars file**, not merely the ones a given machine wants on.
 
 ### Package Installation Modules
 
@@ -172,8 +180,15 @@ complete. The gates and the current measured lint baseline are in
 changes nothing until `ansible-playbook` has been applied and the recap read.
 `ansible-playbook` apply runs are human-only — the play runs as root against
 the daily-driver laptop. Agents may run `--syntax-check`, `--list-tasks`,
-`--check --diff`, `ansible-lint` and `yamllint` freely, and hand over apply
-commands one per message.
+`ansible-lint` and `yamllint` freely, and hand over apply commands one per
+message.
+
+⚠️ **`--check` is not a safe preview in this repo.** Four tasks carry
+`check_mode: false` — `roles/ai-workspace/tasks/main.yml:28` and
+`roles/ai-tools/tasks/main.yml:27,97,144`, documented as deliberate at
+`ai-tools` line 17 — so a check run **really creates those directories** and
+still needs the become password. Treat `--check --diff` as a run that writes,
+and hand it over like any apply.
 
 ## Security posture (do not "improve" away)
 
