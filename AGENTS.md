@@ -191,8 +191,15 @@ The play runs with `become: true`. Override selectively:
 
 Substantial writes go on an ordinary task branch in this checkout —
 `ai/<agent>/<task-id>-<slug>`. **Never a git worktree**, unless Joseph asks for
-one explicitly. Merges to `main` are Joseph's unless the task brief records a
-delegation.
+one explicitly.
+
+Merges to `main` are Joseph's unless he delegates them. **The delegation may be
+given in conversation** — "merge when green", or invoking `/ship` — and does
+not have to be pre-written; STD-ENG-GIT was amended on 2026-08-18 precisely
+because requiring a pre-recorded delegation made his normal way of working
+formally non-compliant. What is **not** optional is recording it afterwards:
+one line in the project log or task brief naming what it covered. A delegation
+covers the work in hand and never a future session.
 
 Run the applicable quality gates and record the evidence before declaring work
 complete. The gates and the current measured lint baseline are in
