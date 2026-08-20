@@ -202,12 +202,20 @@ working formally non-compliant.
 ⛔ **The skill running is not the delegation.** `session-wrap` invokes `/ship`
 itself, so an agent that read "ship is running" as authority would be granting
 itself the merge — which the standard ("from him") and STD-AI-BOUNDARIES both
-forbid.
+forbid. If you got here from a wrap Joseph asked for, you have the delegation
+only if he asked for it knowing it merges; when that is not obvious, **ask
+once** rather than merging or silently stopping.
 
-What is **not** optional is recording it afterwards: one line in this project's
-`log.md` or the task brief, naming what it covered. A delegation covers **every
-PR in that session** — stopping to re-ask about a second one is the failure the
-`ship` skill calls a failed ship — and never a future session.
+What is **not** optional is recording it afterwards: one line under today's
+heading in the **vault bundle's** `log.md` — `aiw project path ansible-arch`,
+not a file in this repo — or in the task brief, naming what it covered.
+
+A delegation covers **every PR this session produced**, so do not stop to
+re-ask about a second one. It does **not** cover a PR left open by an earlier
+session: surface that and leave it. And it never carries to a future session.
+
+The review gate still binds. Delegation is permission to merge, not permission
+to merge unreviewed.
 
 Run the applicable quality gates and record the evidence before declaring work
 complete. The gates and the current measured lint baseline are in
