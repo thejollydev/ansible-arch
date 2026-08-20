@@ -1,5 +1,22 @@
-<!-- AIW-MANAGED: repository-agent-policy-v2 -->
 # Repository Agent Policy — ansible-arch
+
+> ⛔ **Hand-authored. Do not run `aiw repo install-policy` or
+> `aiw repo materialize` against this repository — this warning is the only
+> thing stopping it.**
+>
+> `install_section` in `aiw.py` decides what to do by matching a
+> `<!-- AIW-MANAGED: begin -->` / `<!-- AIW-MANAGED: end -->` **fence pair**.
+> These files have no fence, so the installer takes the *append* path: it
+> writes a `.pre-aiw-*.bak` and glues the generic template onto the bottom.
+> That template's autonomous-writes clause still mandates the worktree model
+> this file bans (`templates/agent/AGENTS.md:32`; ai-workspace #801) — and it
+> would land **after** the ban, so the mandate reads last.
+>
+> **No marker change fixes this.** A bare stamp and no stamp fail the same
+> regex and take the same path; the stamps were removed because they falsely
+> implied the files were managed, not because removal guards anything.
+> `install-policy` loops over **`AGENTS.md` *and* `CLAUDE.md`**, so both are
+> exposed, and neither the tool nor git will warn you.
 
 Project ID: `ansible-arch`
 
@@ -26,7 +43,7 @@ The bundle also holds what this file deliberately does not duplicate:
 
 ## What This Is
 
-Idempotent Ansible playbook for provisioning and managing Arch Linux workstations. A single playbook (`site.yml`) targets multiple machines — differences are handled entirely via host variable feature flags.
+Idempotent Ansible playbook for provisioning and managing Arch Linux workstations. A single playbook (`site.yml`) is designed to target multiple machines — differences are handled entirely via host variable feature flags — though today exactly one machine is managed.
 
 **Targets:**
 - `jolly-LOQ-arch` — physical dev laptop, local connection (NVIDIA, Hyprland, DisplayLink). Also the **control node**: the playbook runs against the machine it runs on.
@@ -45,7 +62,8 @@ ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass
 # Run a single role by tag
 ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass
 
-# Dry run — see what would change without applying
+# Reduced-blast-radius run. NOT a dry run and NOT agent-runnable: four tasks
+# set `check_mode: false`, so this really creates directories under $HOME.
 ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass
 
 # List all tasks
@@ -124,8 +142,12 @@ Host flags have **no default anywhere** — not in `group_vars`, not via `| defa
 ⚠️ **An absent flag is a hard failure, not a skip.** Ansible treats an undefined variable in a `when:` as fatal, so the play **aborts on that host mid-run** — after the earlier roles have already applied, leaving the machine half-configured:
 
 ```
-fatal: [host]: FAILED! => A 'when' expression failed: 'syncthing' is undefined
+fatal: [host]: FAILED! => {"msg": "Task failed: A 'when' expression failed: Error while evaluating conditional: 'syncthing' is undefined"}
 ```
+
+*(One line, as emitted by `ansible-core 2.21.3` — not wrapped, so it greps.
+The wording changes between Ansible versions; match on `is undefined` rather
+than the whole string.)*
 
 That is the intended safety property — a missing flag is loud rather than silently guessed — but it means **every flag must be present in every host_vars file**, not merely the ones a given machine wants on.
 
@@ -162,7 +184,7 @@ The play runs with `become: true`. Override selectively:
 2. Add the role to `site.yml` in the appropriate sequence position with a matching `tags:` entry
 3. If conditional, gate tasks with `when: <flag> | bool` and add the flag to every host_vars file
 4. If it installs services, add enablement tasks to `roles/services/tasks/main.yml`
-5. Update the role table in `README.md`
+5. Add a row to `README.md`'s role table — **descriptions only**. The table describes roles; it is not the list, and `site.yml` stays authoritative for that.
 
 
 ## Change isolation and completion
