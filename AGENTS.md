@@ -10,16 +10,28 @@ aiw project path ansible-arch      # preferred
 # fallback: $AIW_VAULT/10-projects/ansible-arch
 ```
 
-Read `index.md`, `project.md` and the standards profile there before
-substantial work. Migrated to the OKF vault 2026-08-15; the old Master-Mind
-directory is historical.
+Read `90-ai/context.md` first — it carries the boundaries and the traps. Then
+`index.md`, `project.md` and the standards profile, before substantial work.
+Migrated to the OKF vault 2026-08-15; the old Master-Mind directory is
+historical.
+
+The bundle also holds what this file deliberately does not duplicate:
+
+| Question | Document |
+|---|---|
+| Why is it built this way? | `00-governance/decisions/` — eight ADRs |
+| What must be true before work is done? | `60-quality/quality-plan.md` |
+| How do I operate or deploy it? | `70-operations/runbook.md`, `deployment.md` |
+| What is next, and what blocks it? | `10-planning/roadmap.md` → `50-execution/phases/` |
 
 ## What This Is
 
 Idempotent Ansible playbook for provisioning and managing Arch Linux workstations. A single playbook (`site.yml`) targets multiple machines — differences are handled entirely via host variable feature flags.
 
 **Targets:**
-- `jolly-LOQ-arch` — physical dev laptop, local connection (NVIDIA, Hyprland, DisplayLink)
+- `jolly-LOQ-arch` — physical dev laptop, local connection (NVIDIA, Hyprland, DisplayLink). Also the **control node**: the playbook runs against the machine it runs on.
+
+There is no second target. The `forge-dev` VM was destroyed 2026-06-24 (FORGE-73); VLAN 30 is reserved for a replacement that does not exist. This is why fresh-machine reproducibility is still unproven — every role runs against a machine already in the target state.
 
 ## Common Commands
 
@@ -44,10 +56,21 @@ ansible-playbook site.yml --list-tasks
 
 ### Role Structure
 
-19 roles run in sequence via `site.yml`. Every role uses only `tasks/main.yml` — no `defaults/`, `vars/`, or `handlers/` subdirectories. All configuration is driven from host variables.
+Roles run in sequence via `site.yml`, which is **authoritative for the role list and the order**. Do not copy that list into a document — a "19 roles" claim written on 2026-03-25 was still being repeated in four places on 2026-08-19, by which time there were 23.
 
-Role execution order matters (dependencies flow top to bottom):
-`base` → `networking` → `bluetooth` → `audio` → `gpu-nvidia` → `desktop-kde` → `desktop-hyprland` → `shell` → `terminal` → `editor` → `dev-tools` → `apps` → `apps-aur` → `printing` → `hardware` → `insync` → `remote-desktop` → `dotfiles` → `services`
+```bash
+ls -d roles/*/ | wc -l                    # roles on disk
+grep -cE '^\s+- role: ' site.yml          # roles wired into the play
+```
+
+Most roles are a single `tasks/main.yml`. Some carry more, and that is fine when it is warranted:
+
+- `defaults/` — role-internal tunables with sensible defaults (`ai-tools`, `ai-workspace`, `networking`). **Not** for host feature flags.
+- `templates/` — `ai-tools`, `base` (`refind.conf`).
+- `files/` — `aur-audit` (`aur-audit.sh`).
+- `handlers/` — `networking`.
+
+Order matters, and flows: foundation (`base` first — packages, paru, locale, kernels, bootloader) → desktop → userland → applications → hardware and sync → configuration (`dotfiles`, then `ai-workspace`) → `services`.
 
 The `services` role always runs last — it enables systemd services for everything installed by prior roles.
 
@@ -71,7 +94,9 @@ remote_desktop: true
   when: gpu_nvidia | bool
 ```
 
-Available flags: `gpu_nvidia`, `hyprland`, `bluetooth`, `wifi`, `displaylink`, `ios_tools`, `printing`, `insync`, `remote_desktop`, `plymouth`, `btrfs`, `node_exporter`, `syncthing`
+Available flags: `ai_tools`, `gpu_nvidia`, `hyprland`, `bluetooth`, `wifi`, `displaylink`, `ios_tools`, `printing`, `insync`, `remote_desktop`, `plymouth`, `btrfs`, `node_exporter`, `syncthing`
+
+Two roles are gated at the **role** level in `site.yml` rather than per-task — `ai-tools` (`ai_tools`) and `syncthing` (`syncthing`). Everything else gates inside the role, so the role runs and its tasks skip.
 
 ### Bootloader Variable
 
@@ -87,7 +112,14 @@ The rEFInd theme (`rEFInd-minimal`) is cloned from GitHub to `/tmp/rEFInd-minima
 
 ### Variables Scope
 
-**No group_vars, no role defaults — all variables live in host_vars.** Variables available to roles: `hostname`, `timezone`, `locale`, `kernels` (list), `dotfiles_packages` (list), `bootloader` (string), and all feature flags above.
+**There is no `group_vars`.** Two kinds of variable exist, and conflating them is the common mistake:
+
+| Kind | Lives in | Examples |
+|---|---|---|
+| Host feature flags and machine identity | `inventory/host_vars/<host>.yml` | `hostname`, `timezone`, `locale`, `kernels`, `dotfiles_packages`, `bootloader`, every flag above |
+| Role-internal tunables | that role's `defaults/main.yml` | `aiw_install_mode`, `networking_dns_servers`, `antigravity_hub_version` |
+
+Host flags have **no default anywhere** — that is deliberate. An absent flag means the role never runs, rather than silently running with a guessed value.
 
 ### Package Installation Modules
 
@@ -100,7 +132,9 @@ AUR tasks must run as non-root — always set `become: false` on AUR tasks.
 
 The play runs with `become: true`. Override selectively:
 - `become: false` — AUR installs (makepkg requires non-root)
-- `scope: user` on `ansible.builtin.systemd` — user-level services (PipeWire, etc.)
+- `scope: user` on `ansible.builtin.systemd` — user-level services (PipeWire, the `aur-audit` timer)
+
+**Facts gather as root, so `ansible_env.HOME` is `/root`.** Write user-level paths explicitly — `/home/joseph/...` — as `dotfiles`, `dev-tools`, `services`, `aur-audit`, `ai-tools` and `ai-workspace` all do. A first cut of `aur-audit` used `ansible_env.HOME` and created `/root/.config`.
 
 ### Idempotency Conventions
 
@@ -110,20 +144,36 @@ The play runs with `become: true`. Override selectively:
 - Use `update: false` on `git` tasks (clone once, don't pull on every run)
 - Add `changed_when: false` to commands that always report changed (e.g., `locale-gen`, `stow --restow`)
 
+**Verify idempotency by applying twice.** The second run must report `changed=0`; a task that reports `changed` on every run is a bug to file, not noise to wave through. One such task appended 19 duplicate `github.com` entries to `known_hosts` across repeated applies before anyone looked.
+
+**A `creates:` guard that is already satisfied makes a task report `ok` without executing.** A green run only proves the code path ran if you know the guard was open.
+
 ### Adding a New Role
 
 1. Create `roles/<name>/tasks/main.yml`
 2. Add the role to `site.yml` in the appropriate sequence position with a matching `tags:` entry
-3. If conditional, gate tasks with `when: <flag> | bool` and add the flag to both host_vars files
+3. If conditional, gate tasks with `when: <flag> | bool` and add the flag to every host_vars file
 4. If it installs services, add enablement tasks to `roles/services/tasks/main.yml`
+5. Update the role table in `README.md`
 
 
 ## Change isolation and completion
 
-Substantial writes on an assigned task branch/worktree (`aiw worktree new
-ansible-arch <agent> <slug>`); merges to `main` are Joseph's unless the task
-brief records a delegation. Run applicable quality gates and record evidence
-per the standards profile before declaring work complete.
+Substantial writes go on an ordinary task branch in this checkout —
+`ai/<agent>/<task-id>-<slug>`. **Never a git worktree**, unless Joseph asks for
+one explicitly. Merges to `main` are Joseph's unless the task brief records a
+delegation.
+
+Run the applicable quality gates and record the evidence before declaring work
+complete. The gates and the current measured lint baseline are in
+`60-quality/quality-plan.md` in the knowledge bundle.
+
+**Merged is not shipped.** This repository configures a machine; a merged PR
+changes nothing until `ansible-playbook` has been applied and the recap read.
+`ansible-playbook` apply runs are human-only — the play runs as root against
+the daily-driver laptop. Agents may run `--syntax-check`, `--list-tasks`,
+`--check --diff`, `ansible-lint` and `yamllint` freely, and hand over apply
+commands one per message.
 
 ## Security posture (do not "improve" away)
 
