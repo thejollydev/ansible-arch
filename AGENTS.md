@@ -1,13 +1,22 @@
 # Repository Agent Policy — ansible-arch
 
-> **Hand-authored. Do not run `aiw repo install-policy` against this file.**
-> It previously carried an `<!-- AIW-MANAGED: repository-agent-policy-v2 -->`
-> stamp, which was misleading: `install_section` in `aiw.py` only recognises a
-> `<!-- AIW-MANAGED: begin -->` / `<!-- AIW-MANAGED: end -->` **fence pair**. A
-> bare v1 stamp matches nothing, so the installer takes the append path and
-> glues the generic template onto the bottom — and that template still says
-> *"Autonomous writes MUST occur on the assigned branch/worktree"*, which would
-> reintroduce the worktree rule this file bans. Tracked as ai-workspace #801.
+> ⛔ **Hand-authored. Do not run `aiw repo install-policy` or
+> `aiw repo materialize` against this repository — this warning is the only
+> thing stopping it.**
+>
+> `install_section` in `aiw.py` decides what to do by matching a
+> `<!-- AIW-MANAGED: begin -->` / `<!-- AIW-MANAGED: end -->` **fence pair**.
+> These files have no fence, so the installer takes the *append* path: it
+> writes a `.pre-aiw-*.bak` and glues the generic template onto the bottom.
+> That template's autonomous-writes clause still mandates the worktree model
+> this file bans (`templates/agent/AGENTS.md:32`; ai-workspace #801) — and it
+> would land **after** the ban, so the mandate reads last.
+>
+> **No marker change fixes this.** A bare stamp and no stamp fail the same
+> regex and take the same path; the stamps were removed because they falsely
+> implied the files were managed, not because removal guards anything.
+> `install-policy` loops over **`AGENTS.md` *and* `CLAUDE.md`**, so both are
+> exposed, and neither the tool nor git will warn you.
 
 Project ID: `ansible-arch`
 
@@ -133,12 +142,12 @@ Host flags have **no default anywhere** — not in `group_vars`, not via `| defa
 ⚠️ **An absent flag is a hard failure, not a skip.** Ansible treats an undefined variable in a `when:` as fatal, so the play **aborts on that host mid-run** — after the earlier roles have already applied, leaving the machine half-configured:
 
 ```
-fatal: [host]: FAILED! => {"msg": "Task failed: A 'when' expression failed:
-  Error while evaluating conditional: 'syncthing' is undefined"}
+fatal: [host]: FAILED! => {"msg": "Task failed: A 'when' expression failed: Error while evaluating conditional: 'syncthing' is undefined"}
 ```
 
-*(Verbatim from `ansible-core 2.21.3`; the wording of this message has changed
-between Ansible versions, so match on `is undefined`, not the whole string.)*
+*(One line, as emitted by `ansible-core 2.21.3` — not wrapped, so it greps.
+The wording changes between Ansible versions; match on `is undefined` rather
+than the whole string.)*
 
 That is the intended safety property — a missing flag is loud rather than silently guessed — but it means **every flag must be present in every host_vars file**, not merely the ones a given machine wants on.
 

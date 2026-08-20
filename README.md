@@ -54,7 +54,7 @@ ansible-playbook site.yml --list-tasks
 | Role | Description | Conditional |
 |------|-------------|-------------|
 | `base` | Core packages, paru (AUR helper), locale, timezone, hostname, kernels, bootloader (rEFInd or GRUB), snapper, zram, reflector | — |
-| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the BezaForge DNS block gates on `networking_dns_manage` (role default `true`) | partial |
+| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the BezaForge DNS block gates on `networking_dns_manage` (role default `true`) | per-flag |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
 | `gpu-nvidia` | nvidia-dkms, CUDA, cuDNN | `gpu_nvidia` |
