@@ -194,12 +194,20 @@ Substantial writes go on an ordinary task branch in this checkout —
 one explicitly.
 
 Merges to `main` are Joseph's unless he delegates them. **The delegation may be
-given in conversation** — "merge when green", or invoking `/ship` — and does
-not have to be pre-written; STD-ENG-GIT was amended on 2026-08-18 precisely
-because requiring a pre-recorded delegation made his normal way of working
-formally non-compliant. What is **not** optional is recording it afterwards:
-one line in the project log or task brief naming what it covered. A delegation
-covers the work in hand and never a future session.
+given in conversation** — "merge when green", or **Joseph** invoking `/ship` —
+and does not have to be pre-written; STD-ENG-GIT was amended on 2026-08-18
+precisely because requiring a pre-recorded delegation made his normal way of
+working formally non-compliant.
+
+⛔ **The skill running is not the delegation.** `session-wrap` invokes `/ship`
+itself, so an agent that read "ship is running" as authority would be granting
+itself the merge — which the standard ("from him") and STD-AI-BOUNDARIES both
+forbid.
+
+What is **not** optional is recording it afterwards: one line in this project's
+`log.md` or the task brief, naming what it covered. A delegation covers **every
+PR in that session** — stopping to re-ask about a second one is the failure the
+`ship` skill calls a failed ship — and never a future session.
 
 Run the applicable quality gates and record the evidence before declaring work
 complete. The gates and the current measured lint baseline are in
