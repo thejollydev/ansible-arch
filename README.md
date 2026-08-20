@@ -11,7 +11,7 @@ Idempotent Ansible playbook for automated Arch Linux workstation provisioning an
 
 ## Overview
 
-A single playbook that fully configures an Arch Linux workstation from a minimal base install — packages, AUR helper, dotfiles, services, and system settings. Machine differences are handled via host variable feature flags, keeping the codebase DRY across multiple targets.
+A single playbook that fully configures an Arch Linux workstation from a minimal base install — packages, AUR helper, dotfiles, services, and system settings. Machine differences are handled via host variable feature flags, so one codebase can serve several machines — though today exactly one is managed.
 
 **Targets:**
 | Host | Role | Connection |
@@ -28,7 +28,7 @@ sudo pacman -S ansible
 ansible-galaxy collection install -r requirements.yml
 ```
 
-SSH key auth must be configured for any remote hosts.
+The only managed host is local (`ansible_connection: local`). SSH key auth would be needed for a remote target; none exists today.
 
 ## Usage
 
@@ -39,7 +39,8 @@ ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass
 # Single role
 ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass
 
-# Dry run — see what would change without applying
+# Reduced-blast-radius run. NOT a dry run: four tasks set `check_mode: false`,
+# so this really creates directories under $HOME and still prompts for sudo.
 ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass
 
 # List all tasks
@@ -53,7 +54,7 @@ ansible-playbook site.yml --list-tasks
 | Role | Description | Conditional |
 |------|-------------|-------------|
 | `base` | Core packages, paru (AUR helper), locale, timezone, hostname, kernels, bootloader (rEFInd or GRUB), snapper, zram, reflector | — |
-| `networking` | NetworkManager, wireguard-tools, avahi, iwd | `wifi` |
+| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the BezaForge DNS block gates on `networking_dns_manage` (role default `true`) | partial |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
 | `gpu-nvidia` | nvidia-dkms, CUDA, cuDNN | `gpu_nvidia` |
