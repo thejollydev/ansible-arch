@@ -1,3 +1,9 @@
 # AI assistant working files — local only, never tracked
 CLAUDE.md
 .claude/
+
+# AIW-MANAGED-AGENT-FILES — canonical copy lives in the private vault
+/AGENTS.md
+/CLAUDE.md
+/.claudeignore
+/.graphifyignore
