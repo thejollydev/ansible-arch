@@ -30,6 +30,7 @@ printing: true
 insync: true
 syncthing: true
 remote_desktop: false
+winboat: true
 node_exporter: false
 plymouth: true
 btrfs: true
