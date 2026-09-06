@@ -83,6 +83,9 @@
   register: winboat_lsattr
   changed_when: false
   failed_when: false
+  # Read-only, so let it run under --check too; otherwise the chattr task
+  # below can never be evaluated in a check run.
+  check_mode: false
   when: btrfs | bool
 
 # chattr +C only affects files created after it is set, so this is meaningful
