@@ -35,6 +35,9 @@
       tags: apps-aur
     - role: aur-audit
       tags: aur-audit
+    - role: winboat
+      tags: winboat
+      when: winboat | bool
     - role: printing
       tags: printing
     - role: hardware

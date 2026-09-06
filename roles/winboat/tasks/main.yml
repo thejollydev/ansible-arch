@@ -1,0 +1,112 @@
+---
+# WinBoat runs Microsoft 365 by hosting Windows 11 in a dockur/windows
+# container and projecting app windows over FreeRDP RemoteApp.
+#
+# This role provisions the host side only. It does not create the Windows VM:
+# that is a multi-gigabyte unattended install driven by WinBoat's own wizard,
+# needs a product key, and has no business running unattended on a fresh
+# machine. See Runbook — WinBoat in the vault.
+#
+# Docker is not handled here — `dev-tools` installs it and adds joseph to the
+# docker group, `services` enables the daemon. Both run before this role.
+
+- name: Install WinBoat
+  become: false
+  kewlfft.aur.aur:
+    name: winboat-bin
+    state: present
+    use: paru
+
+# winboat-bin's PKGBUILD runs `find -type f -exec chmod 644` and then restores
+# +x only to the main binary. That strips the executable bit from Electron's
+# helpers, and the app will not start without them. It happens again on every
+# upgrade that rebuilds the package, so these tasks are unconditional rather
+# than one-time fixups.
+- name: Restore executable bits the winboat-bin PKGBUILD strips
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+  loop:
+    # setuid root: Electron refuses to start without it, reporting
+    # "The SUID sandbox helper binary was found, but is not configured correctly"
+    - { path: /opt/winboat/chrome-sandbox, mode: "4755" }
+    # crash reporting only — non-fatal, but equally stripped
+    - { path: /opt/winboat/chrome_crashpad_handler, mode: "0755" }
+
+- name: Provide a terminal entry point
+  ansible.builtin.file:
+    src: /opt/winboat/winboat
+    dest: /usr/bin/winboat
+    state: link
+  # The upstream .deb ships only a .desktop file, so there is no `winboat`
+  # command without this.
+
+# Upstream lists this as optional, for better container network performance.
+- name: Load iptable_nat at boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/winboat.conf
+    content: "iptable_nat\n"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Load iptable_nat now
+  community.general.modprobe:
+    name: iptable_nat
+    state: present
+
+# The VM disk must not sit in a snapshotted, copy-on-write subvolume. Snapper
+# runs a timeline on /home; without its own subvolume every hourly snapshot
+# would pin a version of a ~128 GB image and free space would drain steadily.
+# btrfs snapshots are not recursive, so a nested subvolume is skipped by the
+# parent's snapshots. nodatacow additionally avoids the fragmentation that CoW
+# inflicts on a large image under random writes.
+#
+# The trade this accepts: the Windows VM is NOT in snapper rollback history.
+- name: Create the WinBoat storage subvolume
+  ansible.builtin.command:
+    cmd: "btrfs subvolume create {{ winboat_storage }}"
+    creates: "{{ winboat_storage }}"
+  when: btrfs | bool
+
+- name: Create the WinBoat storage directory
+  ansible.builtin.file:
+    path: "{{ winboat_storage }}"
+    state: directory
+    owner: "{{ winboat_user }}"
+    group: "{{ winboat_user }}"
+    mode: "0755"
+
+- name: Check whether copy-on-write is already disabled
+  ansible.builtin.command:
+    cmd: "lsattr -d {{ winboat_storage }}"
+  register: winboat_lsattr
+  changed_when: false
+  failed_when: false
+  when: btrfs | bool
+
+# chattr +C only affects files created after it is set, so this is meaningful
+# on a fresh machine and a no-op on one where the VM already exists.
+- name: Disable copy-on-write on the WinBoat storage subvolume
+  ansible.builtin.command:
+    cmd: "chattr +C {{ winboat_storage }}"
+  changed_when: true
+  when:
+    - btrfs | bool
+    - winboat_lsattr is not skipped
+    - "'C' not in (winboat_lsattr.stdout.split() | first | default(''))"
+
+# WinBoat writes the Windows account password into this file in plaintext and
+# leaves it world-readable. The file only exists after the setup wizard runs.
+- name: Check for the WinBoat compose file
+  ansible.builtin.stat:
+    path: "{{ winboat_home }}/.winboat/docker-compose.yml"
+  register: winboat_compose
+
+- name: Restrict the WinBoat compose file
+  ansible.builtin.file:
+    path: "{{ winboat_home }}/.winboat/docker-compose.yml"
+    owner: "{{ winboat_user }}"
+    group: "{{ winboat_user }}"
+    mode: "0600"
+  when: winboat_compose.stat.exists
