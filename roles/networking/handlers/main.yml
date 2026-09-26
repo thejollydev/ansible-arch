@@ -10,3 +10,10 @@
 - name: Reload systemd for the DNS check
   ansible.builtin.systemd:
     daemon_reload: true
+
+# SIGHUP: NetworkManager re-reads its configuration, DNS mode included,
+# without taking any connection down.
+- name: Reload NetworkManager
+  ansible.builtin.systemd:
+    name: NetworkManager
+    state: reloaded
