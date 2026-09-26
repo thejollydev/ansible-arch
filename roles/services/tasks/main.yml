@@ -18,11 +18,36 @@
     - systemd-resolved
     - systemd-timesyncd
 
+# Textfile collector ONLY (BezaForge #663). The exporter is there so
+# BezaForge's Prometheus can read one metric, bezaforge_dns_primary_in_use,
+# written by roles/networking. It listens on :9100 on every network this
+# laptop joins and there is no host firewall, so every other collector
+# (CPU, disks, mounts, network interfaces) is off: on café WiFi it serves
+# nothing but that metric. The directory must match
+# networking_dns_monitor_metric_file in roles/networking.
+- name: Restrict prometheus-node-exporter to the textfile collector
+  ansible.builtin.copy:
+    dest: /etc/conf.d/prometheus-node-exporter
+    content: |
+      # Managed by ansible-arch roles/services — textfile collector only (BezaForge #663)
+      NODE_EXPORTER_ARGS="{{ services_node_exporter_args | join(' ') }}"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    services_node_exporter_args:
+      - --collector.disable-defaults
+      - --collector.textfile
+      - --collector.textfile.directory=/var/lib/prometheus/node-exporter
+      - --web.disable-exporter-metrics
+  register: services_node_exporter_conf
+  when: node_exporter | bool
+
 - name: Enable prometheus-node-exporter
   ansible.builtin.systemd:
     name: prometheus-node-exporter
     enabled: true
-    state: started
+    state: "{{ 'restarted' if services_node_exporter_conf is changed else 'started' }}"
   when: node_exporter | bool
 
 - name: Enable btrfs snapshot services

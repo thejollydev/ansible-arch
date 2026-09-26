@@ -6,3 +6,7 @@
   ansible.builtin.command:
     cmd: nmcli device reapply {{ ansible_facts['default_ipv4']['interface'] }}
   changed_when: true
+
+- name: Reload systemd for the DNS check
+  ansible.builtin.systemd:
+    daemon_reload: true
