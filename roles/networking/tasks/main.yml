@@ -19,6 +19,43 @@
     state: present
   when: wifi | bool
 # ------------------------------------------------------------
+# One resolver, asked once (BezaForge #663)
+# ------------------------------------------------------------
+# NetworkManager ran in its default DNS mode, writing /etc/resolv.conf
+# itself, while ALSO pushing each connection's servers into
+# systemd-resolved (its systemd-resolved=true default). resolved imported
+# the NM-written file as a second, Global server list, so every name went
+# out on two scopes: A and AAAA on each, four queries per name. A busy
+# page then burst past AdGuard's per-device rate limit, resolved took the
+# drops for a dead server and moved to dnsmasq (2026-09-26).
+#
+# dns=systemd-resolved plus the stub resolv.conf leaves one scope per
+# connection. Nothing needed the plain file: glibc already resolves
+# through resolved (nsswitch `resolve`), Docker reads
+# /run/systemd/resolve/resolv.conf when it sees the stub, and
+# systemd-resolvconf (wg-quick) talks to resolved directly.
+- name: Hand DNS to systemd-resolved in NetworkManager
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/10-dns-systemd-resolved.conf
+    content: |
+      # Managed by ansible-arch roles/networking (BezaForge #663)
+      [main]
+      dns=systemd-resolved
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload NetworkManager
+  when: networking_dns_manage | bool
+
+- name: Point /etc/resolv.conf at the systemd-resolved stub
+  ansible.builtin.file:
+    src: /run/systemd/resolve/stub-resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true
+  when: networking_dns_manage | bool
+
+# ------------------------------------------------------------
 # DNS resilience on the home network (BezaForge #638)
 # ------------------------------------------------------------
 # See defaults/main.yml for the rationale: why this is per-connection

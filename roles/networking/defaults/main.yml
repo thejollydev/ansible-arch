@@ -39,6 +39,10 @@ networking_dns_search: bezaforge.dev
 
 # glibc/resolved default is a 5s timeout with 2 attempts per server, so a
 # plain failover costs ~10s. This brings it to roughly 2s.
+# ⚠️ These options only ever reached programs that read /etc/resolv.conf
+# directly. Since #663 that file is resolved's stub, so they are inert:
+# resolved does its own failover. Harmless, and kept so the profiles
+# still behave if the stub is ever replaced.
 networking_dns_options: "timeout:2,attempts:1"
 
 # Matched by connection NAME, then resolved to UUIDs at run time.

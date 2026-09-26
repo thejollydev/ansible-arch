@@ -20,9 +20,9 @@
 #      node_exporter's textfile collector.
 #
 # ⚠️ WHY STEP 1 LOOKS FOR THE SCOPE, NOT THE FIRST "Current DNS Server":
-# NetworkManager feeds resolved through resolvconf, so the servers land in
-# the Global scope — and away from home the Global scope holds whatever
-# the café handed out. Taking the first "Current DNS Server" would read
+# Each connection is its own scope (NetworkManager dns=systemd-resolved),
+# and away from home the Wi-Fi scope holds whatever the café handed out.
+# Taking the first "Current DNS Server" would read
 # "not AdGuard" on every foreign network and, with the VPN up (AdGuard
 # reachable), restart resolved every half hour for nothing. Only a scope
 # that is configured with AdGuard can be "parked on the secondary".
