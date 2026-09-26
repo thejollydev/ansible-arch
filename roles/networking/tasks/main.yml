@@ -34,6 +34,13 @@
 # through resolved (nsswitch `resolve`), Docker reads
 # /run/systemd/resolve/resolv.conf when it sees the stub, and
 # systemd-resolvconf (wg-quick) talks to resolved directly.
+#
+# ⚠️ Docker decides that ONCE, when the daemon starts. A daemon that was
+# already running when resolv.conf became the stub keeps reading
+# /etc/resolv.conf, finds only 127.0.0.53, drops it as localhost and
+# gives every new container 8.8.8.8/8.8.4.4 — off AdGuard, blind to
+# *.bezaforge.dev (seen 2026-09-26). Restart docker once after the
+# switch. A fresh boot is fine: docker starts after the stub exists.
 - name: Hand DNS to systemd-resolved in NetworkManager
   ansible.builtin.copy:
     dest: /etc/NetworkManager/conf.d/10-dns-systemd-resolved.conf
