@@ -51,15 +51,16 @@
 # Global npm packages
 # ------------------------------------------------------------
 
-- name: Install global npm packages
+# Removed 2026-09-25: Gemini CLI (retired for personal accounts) and
+# obsidian-http-mcp (no agent uses it). Codex is installed by ai-tools.
+- name: Remove retired global npm packages
   community.general.npm:
     name: "{{ item }}"
     global: true
-    state: present
+    state: absent
   loop:
     - obsidian-http-mcp
     - "@google/gemini-cli"
-    - "@openai/codex"
 
 # ------------------------------------------------------------
 # Claude Code CLI

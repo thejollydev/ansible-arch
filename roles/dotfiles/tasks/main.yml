@@ -1,9 +1,14 @@
 ---
+# GitHub's published ed25519 host key, pinned rather than scanned. ssh-keyscan
+# prints a "# github.com:22 SSH-2.0-..." comment line on stdout, so a scanned
+# key never matched the existing entry and this task appended a duplicate on
+# every run. Pinning also stops trusting whatever answers at apply time.
+# Source: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 - name: Accept GitHub SSH host key
   become: false
   ansible.builtin.known_hosts:
     name: github.com
-    key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 github.com 2>/dev/null') }}"
+    key: "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
     path: /home/joseph/.ssh/known_hosts
     state: present
 
@@ -21,6 +26,14 @@
     cmd: stow --restow {{ item }}
     chdir: /home/joseph/dotfiles
   loop: "{{ dotfiles_packages }}"
+  changed_when: false
+
+- name: Stow dotfiles packages that must never fold a directory
+  become: false
+  ansible.builtin.command:
+    cmd: stow --restow --no-folding {{ item }}
+    chdir: /home/joseph/dotfiles
+  loop: "{{ dotfiles_packages_no_folding | default([]) }}"
   changed_when: false
 
 - name: Enable ssh-agent user service
