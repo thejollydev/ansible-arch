@@ -8,10 +8,14 @@
 # Full system upgrade (required on Arch — partial upgrades break dependencies)
 # ------------------------------------------------------------
 
+# Refreshing the sync databases alone reports `changed`, which made this task
+# changed on every run. Count it as a change only when packages moved.
 - name: Full system upgrade
   community.general.pacman:
     update_cache: true
     upgrade: true
+  register: base_upgrade
+  changed_when: base_upgrade.packages | default([]) | length > 0
 
 # ------------------------------------------------------------
 # Pacman configuration
