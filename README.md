@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 ![Last Commit](https://img.shields.io/github/last-commit/thejollydev/ansible-arch?style=flat)
 
-**Status:** ✅ Active, maintenance tempo. Durable project knowledge lives in the OKF vault — `aiw project path ansible-arch`.
+**Status:** ✅ Active, maintenance tempo. Durable project knowledge lives in the Never4gA vault, workspace `10_Workspaces/Dev-Environment`.
 
 Idempotent Ansible playbook for automated Arch Linux workstation provisioning and configuration management.
 
@@ -68,13 +68,13 @@ ansible-playbook site.yml --list-tasks
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
 | `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, etc. | — |
 | `aur-audit` | Weekly read-only AUR supply-chain audit — maintainer churn detection, user timer, `--self-test` | — |
+| `winboat` | WinBoat host side for running Microsoft 365 in a Windows container: package and a fix for the executable bits its PKGBUILD strips, a `winboat` launcher, `iptable_nat`, a nodatacow `~/winboat` subvolume, and a 0600 compose file. The Windows VM itself is created by hand — see the WinBoat runbook in the vault | `winboat` |
 | `printing` | CUPS, sane-airscan, Canon PIXMA driver | `printing` |
 | `hardware` | DisplayLink, iOS tools, Plymouth | per-flag |
 | `insync` | Insync + Dolphin plugin | `insync` |
 | `remote-desktop` | XRDP + xorgxrdp. **Legacy** — `gnome-remote-desktop` is the standard choice for GNOME hosts, installed outside this playbook | `remote_desktop` |
 | `syncthing` | Peer-to-peer file sync | `syncthing` |
 | `dotfiles` | Clone dotfiles repo, GNU Stow deploy | — |
-| `ai-workspace` | The `aiw` CLI, OKF validators, and the shared agent skills. Runs after `dotfiles`: stow owns harness config, this role owns system behaviour | — |
 | `services` | Enable all system + user systemd services | per-flag |
 
 ## Host Variables
@@ -96,7 +96,7 @@ No duplicate roles, no separate playbooks — variables drive the differences.
 
 Host flags have no default anywhere, and **a flag left out is a hard failure, not a skip** — Ansible treats an undefined variable in a `when:` as fatal, so the play aborts on that host part-way through. Every flag must appear in every host_vars file, including the ones set to `false`.
 
-Role-internal tunables are different and *do* have defaults, in that role's `defaults/main.yml` (`ai-tools`, `ai-workspace`, `networking`).
+Role-internal tunables are different and *do* have defaults, in that role's `defaults/main.yml` (`ai-tools`, `networking`, `winboat`).
 
 ## Structure
 
