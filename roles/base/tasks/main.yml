@@ -119,17 +119,19 @@
 
 - name: Check if paru is installed
   ansible.builtin.command: which paru
-  register: paru_check
+  register: base_paru_check
   changed_when: false
   failed_when: false
 
-- name: Clone paru from AUR
+# Unpinned on purpose: this only runs when paru is missing, and the current
+# PKGBUILD is the one to build. paru then updates itself like any AUR package.
+- name: Clone paru from AUR  # noqa: latest[git]
   become: false
   ansible.builtin.git:
     repo: https://aur.archlinux.org/paru.git
     dest: /tmp/paru
     depth: 1
-  when: paru_check.rc != 0
+  when: base_paru_check.rc != 0
 
 - name: Build and install paru
   become: false
@@ -137,7 +139,7 @@
     cmd: makepkg -si --noconfirm
     chdir: /tmp/paru
     creates: /usr/bin/paru
-  when: paru_check.rc != 0
+  when: base_paru_check.rc != 0
 
 
 # ------------------------------------------------------------
@@ -262,18 +264,27 @@
     mode: '0644'
   when: bootloader == 'refind'
 
+# Pinned to the commit on the ESP as of 2026-09-25, so a rebuilt machine boots
+# with the same theme rather than whatever upstream has that day. Cloned into
+# ~/.cache rather than /tmp: /tmp is emptied on reboot, which made the first run
+# after every reboot clone it again and report a change.
 - name: Clone rEFInd-minimal theme
   become: false
   ansible.builtin.git:
     repo: https://github.com/evanpurkhiser/rEFInd-minimal.git
-    dest: /tmp/rEFInd-minimal
-    depth: 1
-    update: false
+    dest: /home/joseph/.cache/rEFInd-minimal
+    version: 56a06a4bd9ed76c05523a22017056dbecca4145d
   when: bootloader == 'refind'
 
-- name: Sync rEFInd-minimal theme files to ESP
+# rsync rather than ansible.posix.synchronize: the ESP is FAT32, which needs
+# these exact ownership and permission flags, and synchronize would only wrap
+# the same command behind another collection.
+- name: Sync rEFInd-minimal theme files to ESP  # noqa: command-instead-of-module
   ansible.builtin.command:
-    cmd: rsync -r --no-perms --no-owner --no-group --exclude=background.png --exclude='.git' /tmp/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
+    cmd: >-
+      rsync -r --no-perms --no-owner --no-group
+      --exclude=background.png --exclude='.git'
+      /home/joseph/.cache/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
   changed_when: false
   when: bootloader == 'refind'
 
@@ -343,10 +354,11 @@
     section: multilib
     option: Include
     value: /etc/pacman.d/mirrorlist
-    no_extra_spaces: yes
-  become: yes
+    no_extra_spaces: true
+    mode: '0644'
+  become: true
 
 - name: Update pacman cache
   community.general.pacman:
-    update_cache: yes
-  become: yes
+    update_cache: true
+  become: true

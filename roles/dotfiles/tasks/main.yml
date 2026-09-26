@@ -12,7 +12,9 @@
     path: /home/joseph/.ssh/known_hosts
     state: present
 
-- name: Ensure dotfiles repo is cloned
+# Unpinned and never pulled on purpose: the checkout is worked in daily, so
+# updating it is a git operation, not a convergence step.
+- name: Ensure dotfiles repo is cloned  # noqa: latest[git]
   become: false
   ansible.builtin.git:
     repo: git@github.com:thejollydev/dotfiles.git

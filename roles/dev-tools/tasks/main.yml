@@ -66,14 +66,12 @@
 # Claude Code CLI
 # ------------------------------------------------------------
 
-- name: Check if Claude Code is installed
-  become: false
-  ansible.builtin.stat:
-    path: /home/joseph/.local/bin/claude
-  register: claude_bin
-
-- name: Install Claude Code CLI
+# Anthropic's own installer, kept on purpose: Claude Code updates itself, and a
+# pacman-managed copy would fight that updater. It runs only when the binary is
+# missing, so a self-updated install is never touched.
+- name: Install Claude Code CLI  # noqa: command-instead-of-module
   become: false
   ansible.builtin.shell:
-    cmd: curl -fsSL https://claude.ai/install.sh | sh
-  when: not claude_bin.stat.exists
+    cmd: set -o pipefail && curl -fsSL https://claude.ai/install.sh | bash
+    executable: /bin/bash
+    creates: /home/joseph/.local/bin/claude
