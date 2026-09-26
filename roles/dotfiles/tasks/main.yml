@@ -28,6 +28,14 @@
   loop: "{{ dotfiles_packages }}"
   changed_when: false
 
+- name: Stow dotfiles packages that must never fold a directory
+  become: false
+  ansible.builtin.command:
+    cmd: stow --restow --no-folding {{ item }}
+    chdir: /home/joseph/dotfiles
+  loop: "{{ dotfiles_packages_no_folding | default([]) }}"
+  changed_when: false
+
 - name: Enable ssh-agent user service
   become: false
   ansible.builtin.systemd:
