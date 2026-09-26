@@ -1,0 +1,12 @@
+# {{ ansible_managed }} — roles/networking (BezaForge #663)
+[Unit]
+Description=BezaForge — check the resolver is on AdGuard, fail back if it answers again
+After=systemd-resolved.service
+Wants=systemd-resolved.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bezaforge-dns-primary-check.sh
+# Holds the failback counter and last-failback time. Persists across
+# reboots so bezaforge_dns_failback_total does not reset and read as "never".
+StateDirectory=bezaforge-dns-check

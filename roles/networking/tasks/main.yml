@@ -107,3 +107,46 @@
       # every run reports changed and the play is never a true no-op.
       # `changed_when: true` is therefore correct: the task only runs at
       # all when the live settings already differ from the desired ones.
+
+# ------------------------------------------------------------
+# Staying on AdGuard (BezaForge #663)
+# ------------------------------------------------------------
+# See defaults/main.yml. `bind` (installed above) provides dig, which the
+# failback needs to ask AdGuard directly rather than through resolved.
+- name: Keep the resolver on AdGuard
+  when: networking_dns_manage | bool and networking_dns_monitor | bool
+  block:
+
+    - name: Deploy the primary-DNS check script
+      ansible.builtin.template:
+        src: dns-primary-check.sh.j2
+        dest: /usr/local/bin/bezaforge-dns-primary-check.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy the primary-DNS check service and timer
+      ansible.builtin.template:
+        src: "dns-primary-check.{{ item }}.j2"
+        dest: "/etc/systemd/system/bezaforge-dns-primary-check.{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - service
+        - timer
+      notify: Reload systemd for the DNS check
+
+    - name: Flush handlers so the units exist before the timer is enabled
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable and start the primary-DNS check timer
+      ansible.builtin.systemd:
+        name: bezaforge-dns-primary-check.timer
+        enabled: true
+        state: started
+
+    - name: Run the check once now so the metric exists immediately
+      ansible.builtin.command: /usr/local/bin/bezaforge-dns-primary-check.sh
+      register: networking_dns_check
+      changed_when: "'restarting systemd-resolved' in networking_dns_check.stdout"

@@ -61,3 +61,27 @@ networking_dns_connections:
     ignore_auto_dns: true
   - name: "BezaForgeWG"
     ignore_auto_dns: false
+
+# ------------------------------------------------------------
+# Staying on AdGuard (BezaForge #663)
+# ------------------------------------------------------------
+# resolved fails over to the secondary when AdGuard stops answering and
+# never fails back, so every AdGuard restart left this laptop on dnsmasq,
+# with no ad-filtering, until someone noticed. A timer now checks every
+# couple of minutes and restarts resolved once AdGuard answers again. See
+# templates/dns-primary-check.sh.j2. Runs whether or not node_exporter is
+# on: the failback is worth having on its own.
+networking_dns_monitor: true
+networking_dns_monitor_interval: 2min
+
+# Where the check writes its metric. node_exporter's textfile collector
+# reads this directory when `node_exporter` is on (roles/services), and
+# BezaForge's Prometheus scrapes it as job node-exporter-workstation.
+networking_dns_monitor_metric_file: /var/lib/prometheus/node-exporter/bezaforge_dns.prom
+
+networking_dns_failback: true
+
+# Seconds between failback attempts. A restart that does not land on
+# AdGuard is not repeated inside this window, so it shows up as "DNS Not
+# Using Primary" instead of resolved restarting every two minutes.
+networking_dns_failback_backoff: 1800

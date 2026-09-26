@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }} — roles/networking/templates/dns-primary-check.sh.j2 (BezaForge #663)
+#
+# The workstation's half of BezaForge's primary-DNS check. The fleet runs
+# the same check from bezaforge-infrastructure roles/dns-client; keep the
+# metric names and the failback rules in step with it.
+#
+# systemd-resolved moves to the secondary (dnsmasq, {{ networking_dns_servers[1] }}) when AdGuard
+# stops answering and never moves back. On the secondary this laptop loses
+# ad-filtering and drops out of AdGuard's query log. It parked there three
+# times in the 2026-08-09/10 session and again on 2026-09-26, and each time
+# a human noticed by hand.
+#
+# Every run:
+#   1. Find the resolver scope that carries AdGuard in its server list and
+#      read which server it is actually using.
+#   2. If that is not AdGuard, and AdGuard answers a DIRECT query, restart
+#      systemd-resolved — at most once per {{ networking_dns_failback_backoff }}s.
+#   3. Export bezaforge_dns_primary_in_use and the failback counters for
+#      node_exporter's textfile collector.
+#
+# ⚠️ WHY STEP 1 LOOKS FOR THE SCOPE, NOT THE FIRST "Current DNS Server":
+# NetworkManager feeds resolved through resolvconf, so the servers land in
+# the Global scope — and away from home the Global scope holds whatever
+# the café handed out. Taking the first "Current DNS Server" would read
+# "not AdGuard" on every foreign network and, with the VPN up (AdGuard
+# reachable), restart resolved every half hour for nothing. Only a scope
+# that is configured with AdGuard can be "parked on the secondary".
+
+set -uo pipefail
+
+PRIMARY="{{ networking_dns_servers[0] }}"
+PROBE="{{ networking_dns_search }}"
+OUT="{{ networking_dns_monitor_metric_file }}"
+TMP="${OUT}.$$"
+FAILBACK="{{ 'true' if networking_dns_failback | bool else 'false' }}"
+BACKOFF="{{ networking_dns_failback_backoff }}"
+STATE="${STATE_DIRECTORY:-/var/lib/bezaforge-dns-check}/failback"
+
+# Prints the current server of the first scope whose DNS Servers include
+# the primary, or nothing if no scope is configured with it (off the home
+# network, VPN down). resolved reports no current server until it has
+# resolved something, so issue one query first.
+current_server() {
+    resolvectl query --cache=no "${PROBE}" >/dev/null 2>&1 || true
+    resolvectl status 2>/dev/null | awk -v p="${PRIMARY}" '
+        function flush() { if (has && !done) { print cur; done = 1 } cur = ""; has = 0 }
+        /^(Global|Link [0-9]+)/ { flush(); next }
+        /Current DNS Server:/   { cur = $NF }
+        /^ *DNS Servers:/       { for (i = 3; i <= NF; i++) if ($i == p) has = 1 }
+        END                     { flush() }'
+}
+
+count=0
+last=0
+if [ -r "${STATE}" ]; then
+    read -r count last < "${STATE}" || true
+fi
+count="${count:-0}"
+last="${last:-0}"
+
+cur="$(current_server)"
+
+if [ "${FAILBACK}" = "true" ] && [ -n "${cur}" ] && [ "${cur}" != "${PRIMARY}" ]; then
+    now="$(date +%s)"
+    if [ $(( now - last )) -ge "${BACKOFF}" ] \
+       && [ -n "$(dig +short +time=2 +tries=1 @"${PRIMARY}" "${PROBE}" 2>/dev/null)" ]; then
+        echo "on ${cur}, primary ${PRIMARY} answers: restarting systemd-resolved to fail back"
+        systemctl restart systemd-resolved
+        count=$(( count + 1 ))
+        last="${now}"
+        printf '%s %s\n' "${count}" "${last}" > "${STATE}"
+        cur="$(current_server)"
+        echo "after failback: ${cur:-no current server}"
+    fi
+fi
+
+if [ "${cur}" = "${PRIMARY}" ]; then
+    value=1
+else
+    value=0
+fi
+
+# Write-then-rename so node_exporter never scrapes a half-written file.
+mkdir -p "$(dirname "${OUT}")"
+cat > "${TMP}" <<EOF
+# HELP bezaforge_dns_primary_in_use 1 if systemd-resolved is using the primary DNS server (AdGuard), 0 if it has fallen through to the secondary or has none.
+# TYPE bezaforge_dns_primary_in_use gauge
+bezaforge_dns_primary_in_use ${value}
+# HELP bezaforge_dns_failback_total Times this host was moved back to the primary DNS server by restarting systemd-resolved.
+# TYPE bezaforge_dns_failback_total counter
+bezaforge_dns_failback_total ${count}
+# HELP bezaforge_dns_failback_last_timestamp_seconds Unix time of the last failback to the primary DNS server, 0 if never.
+# TYPE bezaforge_dns_failback_last_timestamp_seconds gauge
+bezaforge_dns_failback_last_timestamp_seconds ${last}
+EOF
+chmod 0644 "${TMP}"
+mv -f "${TMP}" "${OUT}"
