@@ -11,6 +11,7 @@
       - zoom
       - notion-app-electron
       - postman-bin
+      - gitkraken
     state: present
     use: paru
 
