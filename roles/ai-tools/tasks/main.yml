@@ -210,8 +210,8 @@
 #
 # ⚠️ Do NOT reintroduce a wrapper shim at ~/.local/bin/codex. One existed until
 # 2026-08-08, injecting a bootstrap prompt that told Codex to read Claude's
-# memory files on every invocation. That bridge was retired in favour of
-# Throughlin, which both tools reach over MCP with provenance on every claim.
+# memory files on every invocation. That bridge was retired: one tool's
+# memory is not the other's to read.
 
 - name: Install global AI npm packages
   community.general.npm:

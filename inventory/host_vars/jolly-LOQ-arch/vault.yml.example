@@ -1,0 +1,28 @@
+---
+# The shape of vault.yml, which holds this host's private values and is
+# committed only in encrypted form:
+#
+#   cp vault.yml.example vault.yml   # fill in, then:
+#   ansible-vault encrypt vault.yml
+#
+# Every value below is a placeholder.
+
+# The desktop user the playbook configures. Home is /home/<this>.
+vault_workstation_user: alice
+
+# Resolvers for the profiles in vault_networking_dns_connections, primary
+# first. The primary-DNS check fails back to the first entry.
+vault_networking_dns_servers:
+  - 192.0.2.53
+  - 192.0.2.54
+
+# Search domain for those profiles. Also the name the check resolves.
+vault_networking_dns_search: home.example
+
+# NetworkManager profiles that get the servers above, by connection name.
+# ignore_auto_dns: true for DHCP profiles, false for a manual VPN profile.
+vault_networking_dns_connections:
+  - name: "Home Wi-Fi"
+    ignore_auto_dns: true
+  - name: "Home VPN"
+    ignore_auto_dns: false

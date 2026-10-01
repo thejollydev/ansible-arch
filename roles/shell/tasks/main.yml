@@ -8,7 +8,7 @@
       - starship
     state: present
 
-- name: Set zsh as default shell for joseph
+- name: Set zsh as the workstation user's default shell
   ansible.builtin.user:
-    name: joseph
+    name: "{{ workstation_user }}"
     shell: /bin/zsh

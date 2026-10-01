@@ -24,11 +24,11 @@ antigravity_cli_installer: "https://antigravity.google/cli/install.sh"
 # User-local install roots. Explicit paths, never ansible_env.HOME — site.yml
 # runs with play-level `become: true`, so facts are gathered as root and
 # ansible_env.HOME resolves to /root (see the aur-audit fix, commit 4d4af10).
-ai_tools_user: joseph
-ai_tools_home: /home/joseph
-ai_tools_opt: /home/joseph/.local/opt
-ai_tools_bin: /home/joseph/.local/bin
-ai_tools_desktop: /home/joseph/.local/share/applications
+ai_tools_user: "{{ workstation_user }}"
+ai_tools_home: "{{ workstation_home }}"
+ai_tools_opt: "{{ workstation_home }}/.local/opt"
+ai_tools_bin: "{{ workstation_home }}/.local/bin"
+ai_tools_desktop: "{{ workstation_home }}/.local/share/applications"
 
 # Global npm packages that are AI CLIs. Kept here rather than in dev-tools so
 # every AI tool is reachable under one --tags ai-tools.

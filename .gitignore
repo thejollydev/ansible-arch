@@ -2,9 +2,7 @@
 .claude/
 CLAUDE.local.md
 
-# Agent instruction files are tracked in the repository (ADR-0011). They were
-# excluded here while the only copy lived in the vault behind a symlink; that
-# arrangement is retired.
+# Local tool ignore files — never tracked
 /.claudeignore
 /.graphifyignore
 

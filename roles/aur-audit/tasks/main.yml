@@ -1,5 +1,5 @@
 ---
-# aur-audit — scheduled AUR supply-chain audit (BezaForge #618, 2026-08-02)
+# aur-audit — scheduled AUR supply-chain audit (2026-08-02)
 #
 # Installs aur-audit.sh and runs it weekly as a USER timer. It is a user timer,
 # not a system one, because the paru clone cache lives in ~/.cache/paru and the
@@ -34,14 +34,14 @@
     state: directory
     mode: '0755'
   loop:
-    - /home/joseph/.config/systemd/user
-    - /home/joseph/.local/bin
-    - /home/joseph/.local/state/aur-audit
+    - "{{ workstation_home }}/.config/systemd/user"
+    - "{{ workstation_home }}/.local/bin"
+    - "{{ workstation_home }}/.local/state/aur-audit"
 
 - name: Install aur-audit wrapper (logs always, notifies only on findings)
   become: false
   ansible.builtin.copy:
-    dest: /home/joseph/.local/bin/aur-audit-run
+    dest: "{{ workstation_home }}/.local/bin/aur-audit-run"
     mode: '0755'
     content: |
       #!/usr/bin/env bash
@@ -76,7 +76,7 @@
 - name: Install aur-audit systemd user service
   become: false
   ansible.builtin.copy:
-    dest: /home/joseph/.config/systemd/user/aur-audit.service
+    dest: "{{ workstation_home }}/.config/systemd/user/aur-audit.service"
     mode: '0644'
     content: |
       [Unit]
@@ -90,7 +90,7 @@
 - name: Install aur-audit systemd user timer
   become: false
   ansible.builtin.copy:
-    dest: /home/joseph/.config/systemd/user/aur-audit.timer
+    dest: "{{ workstation_home }}/.config/systemd/user/aur-audit.timer"
     mode: '0644'
     content: |
       [Unit]

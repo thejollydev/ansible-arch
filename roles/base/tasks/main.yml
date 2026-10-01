@@ -81,7 +81,7 @@
 # Passwordless sudo for pacman (required for paru/AUR installs)
 # ------------------------------------------------------------
 #
-# WHY THIS IS DEFENSIBLE FOR BOOTSTRAP (reviewed 2026-08-02, BezaForge #618):
+# WHY THIS IS DEFENSIBLE FOR BOOTSTRAP (reviewed 2026-08-02):
 #
 # This grant is scoped to /usr/bin/pacman only -- not blanket NOPASSWD -- and it
 # exists because paru shells out to pacman to install what it has just built. An
@@ -105,10 +105,10 @@
 # unreviewed. It is pinned to the official AUR paru repo and happens exactly
 # once, before any other AUR package exists on the box.
 
-- name: Allow joseph passwordless sudo for pacman
+- name: Allow the workstation user passwordless sudo for pacman
   ansible.builtin.copy:
-    dest: /etc/sudoers.d/joseph-pacman
-    content: "joseph ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+    dest: "/etc/sudoers.d/{{ workstation_user }}-pacman"
+    content: "{{ workstation_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
     mode: '0440'
     validate: 'visudo -cf %s'
 
@@ -143,7 +143,7 @@
 
 
 # ------------------------------------------------------------
-# paru supply-chain hardening (BezaForge #618, 2026-08-02)
+# paru supply-chain hardening (2026-08-02)
 # ------------------------------------------------------------
 #
 # Context: the June 2026 AUR incident (Arch advisory 2026-06-12) worked by
@@ -272,7 +272,7 @@
   become: false
   ansible.builtin.git:
     repo: https://github.com/evanpurkhiser/rEFInd-minimal.git
-    dest: /home/joseph/.cache/rEFInd-minimal
+    dest: "{{ workstation_home }}/.cache/rEFInd-minimal"
     version: 56a06a4bd9ed76c05523a22017056dbecca4145d
   when: bootloader == 'refind'
 
@@ -284,7 +284,7 @@
     cmd: >-
       rsync -r --no-perms --no-owner --no-group
       --exclude=background.png --exclude='.git'
-      /home/joseph/.cache/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
+      {{ workstation_home }}/.cache/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
   changed_when: false
   when: bootloader == 'refind'
 

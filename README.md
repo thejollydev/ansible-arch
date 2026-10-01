@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 ![Last Commit](https://img.shields.io/github/last-commit/thejollydev/ansible-arch?style=flat)
 
-**Status:** ✅ Active, maintenance tempo. Durable project knowledge lives in the Never4gA vault, workspace `10_Workspaces/Dev-Environment`.
+**Status:** ✅ Active, maintenance tempo.
 
 Idempotent Ansible playbook for automated Arch Linux workstation provisioning and configuration management.
 
@@ -34,17 +34,34 @@ The only managed host is local (`ansible_connection: local`). SSH key auth would
 
 ```bash
 # Full run against a single host
-ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --ask-become-pass --ask-vault-pass
 
 # Single role
-ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --tags editor --ask-become-pass --ask-vault-pass
 
 # Reduced-blast-radius run. NOT a dry run: four tasks set `check_mode: false`,
 # so this really creates directories under $HOME and still prompts for sudo.
-ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass
+ansible-playbook site.yml -l jolly-LOQ-arch --check --diff --ask-become-pass --ask-vault-pass
 
-# List all tasks
+# List all tasks (needs neither password)
 ansible-playbook site.yml --list-tasks
+```
+
+### Private values
+
+Each host keeps its private values — the desktop user, and the DNS servers,
+search domain and NetworkManager profile names for its home network — in
+`inventory/host_vars/<hostname>/vault.yml`, encrypted with `ansible-vault`.
+`vault.yml.example` beside it lists every name the file must define, with
+placeholder values. Any run that applies changes needs `--ask-vault-pass`;
+`--syntax-check` and `--list-tasks` do not.
+
+On a new host:
+
+```bash
+cp inventory/host_vars/<hostname>/vault.yml.example inventory/host_vars/<hostname>/vault.yml
+# edit the values, then:
+ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 ```
 
 ## Roles
@@ -54,7 +71,7 @@ ansible-playbook site.yml --list-tasks
 | Role | Description | Conditional |
 |------|-------------|-------------|
 | `base` | Core packages, paru (AUR helper), locale, timezone, hostname, kernels, bootloader (rEFInd or GRUB), snapper, zram, reflector | — |
-| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the BezaForge DNS block gates on `networking_dns_manage` (role default `true`) | per-flag |
+| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the per-profile DNS block gates on `networking_dns_manage` (role default `true`) and runs only for the profiles named in `networking_dns_connections` | per-flag |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
 | `gpu-nvidia` | nvidia-dkms, CUDA, cuDNN | `gpu_nvidia` |
@@ -68,7 +85,7 @@ ansible-playbook site.yml --list-tasks
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
 | `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, etc. | — |
 | `aur-audit` | Weekly read-only AUR supply-chain audit — maintainer churn detection, user timer, `--self-test` | — |
-| `winboat` | WinBoat host side for running Microsoft 365 in a Windows container: package and a fix for the executable bits its PKGBUILD strips, a `winboat` launcher, `iptable_nat`, a nodatacow `~/winboat` subvolume, and a 0600 compose file. The Windows VM itself is created by hand — see the WinBoat runbook in the vault | `winboat` |
+| `winboat` | WinBoat host side for running Microsoft 365 in a Windows container: package and a fix for the executable bits its PKGBUILD strips, a `winboat` launcher, `iptable_nat`, a nodatacow `~/winboat` subvolume, and a 0600 compose file. The Windows VM itself is created by hand, through WinBoat's own setup wizard | `winboat` |
 | `printing` | CUPS, sane-airscan, Canon PIXMA driver | `printing` |
 | `hardware` | DisplayLink, iOS tools, Plymouth | per-flag |
 | `insync` | Insync + Dolphin plugin | `insync` |
@@ -82,7 +99,7 @@ ansible-playbook site.yml --list-tasks
 Machine differences are controlled by feature flags in `inventory/host_vars/`. Each role checks its relevant flag before running:
 
 ```yaml
-# inventory/host_vars/<hostname>.yml (excerpt)
+# inventory/host_vars/<hostname>/vars.yml (excerpt)
 gpu_nvidia: false
 hyprland: false
 bluetooth: false
@@ -105,18 +122,20 @@ ansible-arch/
 ├── inventory/
 │   ├── hosts.yml
 │   └── host_vars/
-│       └── jolly-LOQ-arch.yml
+│       └── jolly-LOQ-arch/
+│           ├── vars.yml          # feature flags and settings
+│           ├── vault.yml         # private values, ansible-vault encrypted
+│           └── vault.yml.example # the names vault.yml must define
 ├── roles/
 │   └── <role>/
 │       ├── tasks/main.yml        # every role
 │       ├── defaults/main.yml     # role-internal tunables, where needed
-│       ├── templates/            # base, ai-tools
+│       ├── templates/            # base, ai-tools, networking
 │       ├── files/                # aur-audit
 │       └── handlers/             # networking
 ├── site.yml
 ├── requirements.yml
-├── ansible.cfg
-└── AGENTS.md                     # repository agent policy
+└── ansible.cfg
 ```
 
 ## Stack

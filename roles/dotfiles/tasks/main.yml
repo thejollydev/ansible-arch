@@ -9,7 +9,7 @@
   ansible.builtin.known_hosts:
     name: github.com
     key: "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
-    path: /home/joseph/.ssh/known_hosts
+    path: "{{ workstation_home }}/.ssh/known_hosts"
     state: present
 
 # Unpinned and never pulled on purpose: the checkout is worked in daily, so
@@ -18,7 +18,7 @@
   become: false
   ansible.builtin.git:
     repo: git@github.com:thejollydev/dotfiles.git
-    dest: /home/joseph/dotfiles
+    dest: "{{ workstation_home }}/dotfiles"
     update: false
     accept_newhostkey: true
 
@@ -26,7 +26,7 @@
   become: false
   ansible.builtin.command:
     cmd: stow --restow {{ item }}
-    chdir: /home/joseph/dotfiles
+    chdir: "{{ workstation_home }}/dotfiles"
   loop: "{{ dotfiles_packages }}"
   changed_when: false
 
@@ -34,7 +34,7 @@
   become: false
   ansible.builtin.command:
     cmd: stow --restow --no-folding {{ item }}
-    chdir: /home/joseph/dotfiles
+    chdir: "{{ workstation_home }}/dotfiles"
   loop: "{{ dotfiles_packages_no_folding | default([]) }}"
   changed_when: false
 

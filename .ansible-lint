@@ -1,6 +1,5 @@
 ---
 # Hyphenated role names are deliberate: the role directory, the site.yml tag
-# and the --tags argument a human types are the same string. See ADR 0006 in
-# the vault (Dev-Environment workspace, Decisions).
+# and the --tags argument a human types are the same string.
 skip_list:
   - role-name

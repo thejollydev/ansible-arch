@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # aur-audit.sh — AUR supply-chain audit for an Arch workstation.
 #
-# Origin: BezaForge #618 (2026-08-02), after the June 2026 AUR incident in which
+# Origin: 2026-08-02, after the June 2026 AUR incident in which
 # attackers ADOPTED orphaned AUR packages and added build-time hooks that pulled
 # a Rust infostealer + optional eBPF rootkit.
 #
