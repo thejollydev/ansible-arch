@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-# {{ ansible_managed }} — roles/networking/templates/dns-primary-check.sh.j2 (BezaForge #663)
+# {{ ansible_managed }} — roles/networking/templates/dns-primary-check.sh.j2
 #
-# The workstation's half of BezaForge's primary-DNS check. The fleet runs
-# the same check from bezaforge-infrastructure roles/dns-client; keep the
-# metric names and the failback rules in step with it.
+# Keeps this workstation on its primary DNS server. Other hosts on the same
+# network may run an equivalent check; keep the metric names and the
+# failback rules in step with theirs.
 #
-# systemd-resolved moves to the secondary (dnsmasq, {{ networking_dns_servers[1] }}) when AdGuard
-# stops answering and never moves back. On the secondary this laptop loses
-# ad-filtering and drops out of AdGuard's query log. It parked there three
-# times in the 2026-08-09/10 session and again on 2026-09-26, and each time
-# a human noticed by hand.
+# systemd-resolved moves to the secondary ({{ networking_dns_servers[1] | default('none configured') }}) when the
+# primary stops answering and never moves back. On the secondary this laptop
+# loses filtering and drops out of the primary's query log. It parked there
+# three times in the 2026-08-09/10 session and again on 2026-09-26, and each
+# time a human noticed by hand.
 #
 # Every run:
-#   1. Find the resolver scope that carries AdGuard in its server list and
-#      read which server it is actually using.
-#   2. If that is not AdGuard, and AdGuard answers a DIRECT query, restart
-#      systemd-resolved — at most once per {{ networking_dns_failback_backoff }}s.
+#   1. Find the resolver scope that carries the primary in its server list
+#      and read which server it is actually using.
+#   2. If that is not the primary, and the primary answers a DIRECT query,
+#      restart systemd-resolved — at most once per {{ networking_dns_failback_backoff }}s.
 #   3. Export bezaforge_dns_primary_in_use and the failback counters for
 #      node_exporter's textfile collector.
 #
 # ⚠️ WHY STEP 1 LOOKS FOR THE SCOPE, NOT THE FIRST "Current DNS Server":
 # Each connection is its own scope (NetworkManager dns=systemd-resolved),
 # and away from home the Wi-Fi scope holds whatever the café handed out.
-# Taking the first "Current DNS Server" would read
-# "not AdGuard" on every foreign network and, with the VPN up (AdGuard
-# reachable), restart resolved every half hour for nothing. Only a scope
-# that is configured with AdGuard can be "parked on the secondary".
+# Taking the first "Current DNS Server" would read "not the primary" on
+# every foreign network and, with the VPN up (primary reachable), restart
+# resolved every half hour for nothing. Only a scope that is configured
+# with the primary can be "parked on the secondary".
 
 set -uo pipefail
 
@@ -84,7 +84,7 @@ fi
 # Write-then-rename so node_exporter never scrapes a half-written file.
 mkdir -p "$(dirname "${OUT}")"
 cat > "${TMP}" <<EOF
-# HELP bezaforge_dns_primary_in_use 1 if systemd-resolved is using the primary DNS server (AdGuard), 0 if it has fallen through to the secondary or has none.
+# HELP bezaforge_dns_primary_in_use 1 if systemd-resolved is using the primary DNS server, 0 if it has fallen through to the secondary or has none.
 # TYPE bezaforge_dns_primary_in_use gauge
 bezaforge_dns_primary_in_use ${value}
 # HELP bezaforge_dns_failback_total Times this host was moved back to the primary DNS server by restarting systemd-resolved.

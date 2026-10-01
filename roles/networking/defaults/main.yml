@@ -4,53 +4,54 @@
 # ============================================================
 
 # ------------------------------------------------------------
-# DNS resilience on the home network (BezaForge #638)
+# DNS resilience on the home network
 # ------------------------------------------------------------
-# The workstation used to resolve through a SINGLE server — AdGuard on
-# forge-ops (10.10.20.20), handed out by DHCP. When AdGuard went down the
-# laptop lost DNS completely, while every fleet host stayed up. It was the
-# least redundant machine on the network.
+# The workstation used to resolve through a SINGLE server, handed out by
+# DHCP. When that server went down the laptop lost DNS completely, while
+# every other host on the network stayed up.
 #
-# It now carries both internal-aware servers, matching the fleet:
-#   10.10.20.20 — AdGuard on forge-ops. Primary. Ad-blocking + DoH upstream.
-#   10.10.10.10 — dnsmasq on forge-hypervisor. Secondary, same internal zone.
+# It now carries two internal-aware servers: a filtering primary and a
+# secondary serving the same internal zone. Verified with the primary
+# genuinely stopped: an UNCACHEABLE probe name resolved in 83 ms via the
+# secondary, internal and external both fine.
 #
-# Verified 2026-08-09 with AdGuard genuinely stopped: an UNCACHEABLE probe
-# name resolved in 83 ms via the secondary, internal and external both fine.
+# The real servers, search domain and profile names are this host's private
+# values: see inventory/host_vars/<host>/vault.yml.example. With the lists
+# empty, the role only hands DNS to systemd-resolved and touches no profile.
 #
 # ⚠️ WHY PER-CONNECTION AND NOT NetworkManager's [global-dns]:
 # global-dns overrides DNS on EVERY network, so on coffee-shop WiFi the
-# laptop would still insist on 10.10.20.20 — unreachable — and have no DNS
-# at all while travelling. Only home WiFi and the WireGuard tunnel get this;
+# laptop would still insist on the home resolvers — unreachable — and have
+# no DNS at all while travelling. Only home WiFi and the VPN get this;
 # every other profile keeps whatever that network provides.
 #
 # ⚠️ WHY dns-search IS SET EXPLICITLY:
 # `ipv4.ignore-auto-dns yes` discards the DHCP-supplied SEARCH DOMAIN along
 # with the DHCP nameservers. Setting the servers without also setting the
-# search domain broke every bare hostname (`ssh forge-ai`) on 2026-08-09.
+# search domain broke every bare hostname (`ssh <host>`) on 2026-08-09.
 # The two must move together.
 networking_dns_manage: true
 
-networking_dns_servers:
-  - 10.10.20.20
-  - 10.10.10.10
+# Primary first. The primary-DNS check below fails back to the first entry.
+networking_dns_servers: []
 
-networking_dns_search: bezaforge.dev
+networking_dns_search: ""
 
 # glibc/resolved default is a 5s timeout with 2 attempts per server, so a
 # plain failover costs ~10s. This brings it to roughly 2s.
 # ⚠️ These options only ever reached programs that read /etc/resolv.conf
-# directly. Since #663 that file is resolved's stub, so they are inert:
-# resolved does its own failover. Harmless, and kept so the profiles
-# still behave if the stub is ever replaced.
+# directly. Now that file is resolved's stub, so they are inert: resolved
+# does its own failover. Harmless, and kept so the profiles still behave if
+# the stub is ever replaced.
 networking_dns_options: "timeout:2,attempts:1"
 
-# Matched by connection NAME, then resolved to UUIDs at run time.
+# Matched by connection NAME, then resolved to UUIDs at run time. Each
+# entry is {name, ignore_auto_dns}.
 #
 # NM connection names are not unique, and this laptop had proved it: there
-# were TWO profiles named "The Bunker" (both autoconnect=yes), which made a
-# name-only `nmcli con mod` ambiguous and warn. The stale one — last used
-# 2026-04-08 — was deleted 2026-08-09, so only the active profile remains.
+# were TWO home-WiFi profiles with the same name (both autoconnect=yes),
+# which made a name-only `nmcli con mod` ambiguous and warn. The stale one
+# was deleted 2026-08-09, so only the active profile remains.
 #
 # The UUID resolution stays anyway: it costs nothing, it keeps the role
 # correct if a duplicate reappears (they arrive by accident, e.g. re-entering
@@ -58,34 +59,31 @@ networking_dns_options: "timeout:2,attempts:1"
 # whichever one nmcli happens to pick.
 #
 # ignore_auto_dns matters only for DHCP profiles: it stops the router's
-# single-server list from overriding ours. WireGuard is method=manual and
-# has no DHCP to ignore.
-networking_dns_connections:
-  - name: "The Bunker"
-    ignore_auto_dns: true
-  - name: "BezaForgeWG"
-    ignore_auto_dns: false
+# single-server list from overriding ours. A WireGuard profile is
+# method=manual and has no DHCP to ignore.
+networking_dns_connections: []
 
 # ------------------------------------------------------------
-# Staying on AdGuard (BezaForge #663)
+# Staying on the primary
 # ------------------------------------------------------------
-# resolved fails over to the secondary when AdGuard stops answering and
-# never fails back, so every AdGuard restart left this laptop on dnsmasq,
-# with no ad-filtering, until someone noticed. A timer now checks every
-# couple of minutes and restarts resolved once AdGuard answers again. See
-# templates/dns-primary-check.sh.j2. Runs whether or not node_exporter is
-# on: the failback is worth having on its own.
+# resolved fails over to the secondary when the primary stops answering and
+# never fails back, so every primary restart left this laptop on the
+# secondary, with no filtering, until someone noticed. A timer now checks
+# every couple of minutes and restarts resolved once the primary answers
+# again. See templates/dns-primary-check.sh.j2. Runs whether or not
+# node_exporter is on: the failback is worth having on its own. Needs at
+# least one server, so it is skipped while networking_dns_servers is empty.
 networking_dns_monitor: true
 networking_dns_monitor_interval: 2min
 
 # Where the check writes its metric. node_exporter's textfile collector
-# reads this directory when `node_exporter` is on (roles/services), and
-# BezaForge's Prometheus scrapes it as job node-exporter-workstation.
+# reads this directory when `node_exporter` is on (roles/services), so a
+# Prometheus server can scrape it.
 networking_dns_monitor_metric_file: /var/lib/prometheus/node-exporter/bezaforge_dns.prom
 
 networking_dns_failback: true
 
-# Seconds between failback attempts. A restart that does not land on
-# AdGuard is not repeated inside this window, so it shows up as "DNS Not
-# Using Primary" instead of resolved restarting every two minutes.
+# Seconds between failback attempts. A restart that does not land on the
+# primary is not repeated inside this window, so it shows up as an alert
+# instead of resolved restarting every two minutes.
 networking_dns_failback_backoff: 1800

@@ -1,6 +1,6 @@
-# {{ ansible_managed }} — roles/networking (BezaForge #663)
+# {{ ansible_managed }} — roles/networking
 [Unit]
-Description=BezaForge — check the resolver is on AdGuard, fail back if it answers again
+Description=Check the resolver is on the primary DNS server, fail back if it answers again
 After=systemd-resolved.service
 Wants=systemd-resolved.service
 

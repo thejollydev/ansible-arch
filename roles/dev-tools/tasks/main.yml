@@ -41,9 +41,9 @@
     state: present
   when: node_exporter | bool
 
-- name: Add joseph to docker group
+- name: Add the workstation user to the docker group
   ansible.builtin.user:
-    name: joseph
+    name: "{{ workstation_user }}"
     groups: docker
     append: true
 
@@ -74,4 +74,4 @@
   ansible.builtin.shell:
     cmd: set -o pipefail && curl -fsSL https://claude.ai/install.sh | bash
     executable: /bin/bash
-    creates: /home/joseph/.local/bin/claude
+    creates: "{{ workstation_home }}/.local/bin/claude"

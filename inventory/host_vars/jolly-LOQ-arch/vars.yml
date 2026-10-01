@@ -7,6 +7,17 @@ hostname: jolly-LOQ-arch
 timezone: America/Detroit
 locale: en_US.UTF-8
 
+# Private values come from vault.yml beside this file, which is encrypted
+# with ansible-vault. Applies need --ask-vault-pass; --syntax-check and
+# --list-tasks do not. See vault.yml.example for the names it must define.
+workstation_user: "{{ vault_workstation_user }}"
+workstation_home: "/home/{{ workstation_user }}"
+
+# DNS on the home network and the VPN (roles/networking)
+networking_dns_servers: "{{ vault_networking_dns_servers }}"
+networking_dns_search: "{{ vault_networking_dns_search }}"
+networking_dns_connections: "{{ vault_networking_dns_connections }}"
+
 # Kernels (first in list = default boot entry)
 kernels:
   - linux-zen
@@ -31,14 +42,14 @@ insync: true
 syncthing: true
 remote_desktop: false
 winboat: true
-node_exporter: true   # textfile-only, for BezaForge DNS monitoring (#663)
+node_exporter: true   # textfile collector only, for the primary-DNS metric
 plymouth: true
 btrfs: true
 
 # Bootloader
 bootloader: refind
 refind_default_selection: arch-linux-zen
-refind_background_src: /home/joseph/GoogleDrive/Pictures/Wallpapers/pexels-mart-production-7577898.jpg
+refind_background_src: "{{ workstation_home }}/GoogleDrive/Pictures/Wallpapers/pexels-mart-production-7577898.jpg"
 
 # Dotfiles stow packages
 dotfiles_packages:
@@ -53,6 +64,6 @@ dotfiles_packages:
   - bin
 # Stowed with --no-folding: only the files in the package are linked, never a
 # directory. Antigravity writes runtime state beside config/mcp_config.json,
-# and a folded ~/.gemini/config link would put that state in the repo (#792).
+# and a folded ~/.gemini/config link would put that state in the repo.
 dotfiles_packages_no_folding:
   - gemini

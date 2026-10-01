@@ -5,9 +5,9 @@
 # This role provisions the host side only. It does not create the Windows VM:
 # that is a multi-gigabyte unattended install driven by WinBoat's own wizard,
 # needs a product key, and has no business running unattended on a fresh
-# machine. See Runbook — WinBoat in the vault.
+# machine.
 #
-# Docker is not handled here — `dev-tools` installs it and adds joseph to the
+# Docker is not handled here — `dev-tools` installs it and adds the user to the
 # docker group, `services` enables the daemon. Both run before this role.
 
 - name: Install WinBoat

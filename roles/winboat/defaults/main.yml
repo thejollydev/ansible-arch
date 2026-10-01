@@ -1,6 +1,6 @@
 ---
 # The account WinBoat runs as. WinBoat is a per-user desktop app: it keeps its
 # compose file in ~/.winboat and its VM disk in the directory below.
-winboat_user: joseph
-winboat_home: /home/joseph
-winboat_storage: /home/joseph/winboat
+winboat_user: "{{ workstation_user }}"
+winboat_home: "{{ workstation_home }}"
+winboat_storage: "{{ workstation_home }}/winboat"
