@@ -1,0 +1,22 @@
+---
+# The settings ansible-lint asks of a yamllint configuration, so the two tools
+# agree about the same file. Run from the repository root:
+#
+#   yamllint .
+extends: default
+
+ignore: |
+  .ansible/
+  inventory/host_vars/*/vault.yml
+
+rules:
+  braces:
+    max-spaces-inside: 1
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  line-length:
+    max: 160
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
