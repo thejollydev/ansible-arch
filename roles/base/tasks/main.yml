@@ -58,6 +58,7 @@
       - dkms
       - zram-generator
       - efibootmgr
+      - dosfstools   # fsck.fat for the EFI partition; nothing else pulls it in
       - imagemagick
     state: present
 
@@ -323,60 +324,6 @@
     replace: '\1 grub-btrfs-overlayfs)'
   notify: Rebuild initramfs images
   when: bootloader == 'grub' and btrfs | bool
-
-- name: Install rEFInd
-  community.general.pacman:
-    name: refind
-    state: present
-  when: bootloader == 'refind'
-
-- name: Run refind-install (first-time EFI setup)
-  ansible.builtin.command:
-    cmd: refind-install
-    creates: /boot/EFI/refind/refind_x64.efi
-  when: bootloader == 'refind'
-
-- name: Deploy refind.conf
-  ansible.builtin.template:
-    src: refind.conf.j2
-    dest: /boot/EFI/refind/refind.conf
-    mode: '0644'
-  when: bootloader == 'refind'
-
-# Pinned to the commit on the ESP as of 2026-09-25, so a rebuilt machine boots
-# with the same theme rather than whatever upstream has that day. Cloned into
-# ~/.cache rather than /tmp: /tmp is emptied on reboot, which made the first run
-# after every reboot clone it again and report a change.
-- name: Clone rEFInd-minimal theme
-  become: false
-  ansible.builtin.git:
-    repo: https://github.com/evanpurkhiser/rEFInd-minimal.git
-    dest: "{{ workstation_home }}/.cache/rEFInd-minimal"
-    version: 56a06a4bd9ed76c05523a22017056dbecca4145d
-  when: bootloader == 'refind'
-
-# rsync rather than ansible.posix.synchronize: the ESP is FAT32, which needs
-# these exact ownership and permission flags, and synchronize would only wrap
-# the same command behind another collection.
-- name: Sync rEFInd-minimal theme files to ESP  # noqa: command-instead-of-module
-  ansible.builtin.command:
-    cmd: >-
-      rsync -r --no-perms --no-owner --no-group
-      --exclude=background.png --exclude='.git'
-      {{ workstation_home }}/.cache/rEFInd-minimal/ /boot/EFI/refind/themes/rEFInd-minimal/
-  changed_when: false
-  when: bootloader == 'refind'
-
-- name: Convert and copy rEFInd background image
-  ansible.builtin.command:
-    cmd: >
-      convert '{{ refind_background_src }}'
-      -resize 1920x1200^
-      -gravity center
-      -extent 1920x1200
-      /boot/EFI/refind/themes/rEFInd-minimal/background.png
-    creates: /boot/EFI/refind/themes/rEFInd-minimal/background.png
-  when: bootloader == 'refind'
 
 # ------------------------------------------------------------
 # btrfs tools and snapper (btrfs only)
