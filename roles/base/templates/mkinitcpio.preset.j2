@@ -1,0 +1,11 @@
+# mkinitcpio preset file for the '{{ item }}' package
+# Managed by Ansible. Image files in /boot, loaded by GRUB.
+
+ALL_kver="/boot/vmlinuz-{{ item }}"
+
+PRESETS=('default' 'fallback')
+
+default_image="/boot/initramfs-{{ item }}.img"
+
+fallback_image="/boot/initramfs-{{ item }}-fallback.img"
+fallback_options="-S autodetect"

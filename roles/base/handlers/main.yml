@@ -1,0 +1,17 @@
+---
+# Both write to /boot only, which is inside the btrfs root. Nothing here
+# touches the EFI partition or the firmware.
+
+- name: Rebuild initramfs images
+  ansible.builtin.command:
+    cmd: mkinitcpio -P
+  changed_when: true
+
+# Skipped until grub-install has been run by hand: /boot/grub does not exist
+# before that, and there is no menu to regenerate.
+- name: Regenerate GRUB menu
+  ansible.builtin.command:
+    cmd: grub-mkconfig -o /boot/grub/grub.cfg
+    removes: /boot/grub
+  changed_when: true
+  when: bootloader == 'grub'
