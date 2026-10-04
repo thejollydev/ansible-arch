@@ -373,6 +373,10 @@
 # ------------------------------------------------------------
 # Enable the multilib repository in pacman.conf
 # ------------------------------------------------------------
+# exclusive: false, so only this one Include line is managed. pacman.conf has
+# no end-of-section marker: an Include line that a package appends to the end
+# of the file sits "inside" [multilib] as far as an INI parser can tell, and
+# the default (exclusive) deleted it as a duplicate option on every apply.
 - name: Enable the multilib repository in pacman.conf
   community.general.ini_file:
     path: /etc/pacman.conf
@@ -380,6 +384,7 @@
     section: multilib
     option: Include
     value: /etc/pacman.d/mirrorlist
+    exclusive: false
     no_extra_spaces: true
     mode: '0644'
   become: true
