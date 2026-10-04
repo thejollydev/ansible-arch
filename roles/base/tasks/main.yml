@@ -58,6 +58,7 @@
       - dkms
       - zram-generator
       - efibootmgr
+      - dosfstools   # fsck.fat for the EFI partition; nothing else pulls it in
       - imagemagick
     state: present
 
