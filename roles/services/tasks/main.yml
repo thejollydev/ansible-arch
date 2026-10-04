@@ -69,13 +69,6 @@
     state: started
   when: bootloader == 'grub' and btrfs | bool
 
-- name: Enable refind-btrfs service
-  ansible.builtin.systemd:
-    name: refind-btrfs
-    enabled: true
-    state: started
-  when: bootloader == 'refind' and btrfs | bool
-
 # ------------------------------------------------------------
 # Conditional system services
 # ------------------------------------------------------------
