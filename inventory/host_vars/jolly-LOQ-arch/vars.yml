@@ -18,7 +18,7 @@ networking_dns_servers: "{{ vault_networking_dns_servers }}"
 networking_dns_search: "{{ vault_networking_dns_search }}"
 networking_dns_connections: "{{ vault_networking_dns_connections }}"
 
-# Kernels (first in list = default boot entry)
+# Kernels (the default boot entry is grub_default_kernel, below)
 kernels:
   - linux-zen
   - linux-zen-headers
@@ -46,10 +46,12 @@ node_exporter: true   # textfile collector only, for the primary-DNS metric
 plymouth: true
 btrfs: true
 
-# Bootloader
-bootloader: refind
-refind_default_selection: arch-linux-zen
-refind_background_src: "{{ workstation_home }}/GoogleDrive/Pictures/Wallpapers/pexels-mart-production-7577898.jpg"
+# Bootloader. GRUB loads kernels from /boot inside the btrfs root; the EFI
+# partition is mounted at /efi.
+bootloader: grub
+grub_default_kernel: linux-zen   # top entry in the menu
+grub_cmdline_default: "zswap.enabled=0 nvidia.NVreg_EnableBacklightHandler=1"
+grub_os_prober: true             # this machine also boots another OS
 
 # Dotfiles stow packages
 dotfiles_packages:

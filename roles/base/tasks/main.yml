@@ -238,12 +238,91 @@
 # Bootloader
 # ------------------------------------------------------------
 
+# GRUB loads the kernels from /boot inside the btrfs root, so a snapshot
+# carries the kernel that matches it and grub-btrfs can boot it. That needs
+# /boot to be a directory on the root filesystem and the EFI partition
+# mounted at /efi.
+#
+# What this role does NOT do: grub-install and efibootmgr. Anything that
+# writes the EFI partition or the firmware's boot entries is a manual step,
+# listed in ~/POST-INSTALL.md.
+
 - name: Install GRUB
   community.general.pacman:
     name:
       - grub
     state: present
   when: bootloader == 'grub'
+
+- name: Install os-prober (other operating systems in the GRUB menu)
+  community.general.pacman:
+    name: os-prober
+    state: present
+  when: bootloader == 'grub' and grub_os_prober | bool
+
+- name: Install grub-btrfs (snapshot entries in the GRUB menu)
+  community.general.pacman:
+    name:
+      - grub-btrfs
+      - inotify-tools
+    state: present
+  notify: Regenerate GRUB menu
+  when: bootloader == 'grub' and btrfs | bool
+
+- name: Set the kernel command line for GRUB
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^#?GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ grub_cmdline_default }}"'
+  notify: Regenerate GRUB menu
+  when: bootloader == 'grub'
+
+- name: Put the default kernel at the top of the GRUB menu
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^#?GRUB_TOP_LEVEL='
+    line: 'GRUB_TOP_LEVEL="/boot/vmlinuz-{{ grub_default_kernel }}"'
+    insertafter: '^GRUB_DISTRIBUTOR='
+  notify: Regenerate GRUB menu
+  when: bootloader == 'grub'
+
+- name: Let GRUB look for other operating systems
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^#?GRUB_DISABLE_OS_PROBER='
+    line: >-
+      GRUB_DISABLE_OS_PROBER={{ 'false' if grub_os_prober | bool else 'true' }}
+  notify: Regenerate GRUB menu
+  when: bootloader == 'grub'
+
+# GRUB lists every unified kernel image it finds in EFI/Linux, each under the
+# same name. This setup boots image files, so the script is switched off. A
+# grub package upgrade restores the executable bit; this puts it back.
+- name: Keep unified kernel images out of the GRUB menu
+  ansible.builtin.file:
+    path: /etc/grub.d/15_uki
+    mode: '0644'
+  notify: Regenerate GRUB menu
+  when: bootloader == 'grub'
+
+- name: Build image files, not unified kernel images
+  ansible.builtin.template:
+    src: mkinitcpio.preset.j2
+    dest: "/etc/mkinitcpio.d/{{ item }}.preset"
+    mode: '0644'
+  loop: "{{ kernels | reject('search', '-headers$') | list }}"
+  notify: Rebuild initramfs images
+  when: bootloader == 'grub'
+
+# The hook acts only when the root being booted is a read-only snapshot: it
+# puts a writable layer in memory over it. On a normal boot it does nothing.
+- name: Let a read-only snapshot boot (grub-btrfs-overlayfs hook)
+  ansible.builtin.replace:
+    path: /etc/mkinitcpio.conf
+    regexp: '^(HOOKS=\((?!.*grub-btrfs-overlayfs).*)\)$'
+    replace: '\1 grub-btrfs-overlayfs)'
+  notify: Rebuild initramfs images
+  when: bootloader == 'grub' and btrfs | bool
 
 - name: Install rEFInd
   community.general.pacman:
