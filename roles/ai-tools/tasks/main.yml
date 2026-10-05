@@ -218,6 +218,88 @@
     - antigravity-ide
 
 # ------------------------------------------------------------
+# ChatGPT desktop (OpenAI's own pacman repository)
+# ------------------------------------------------------------
+# chatgpt-bin is not in the Arch repositories or the AUR as a signed build;
+# OpenAI publishes it in a repository of its own. The package's install
+# script would add that repository and its key by itself, but only once the
+# package is installed, so on a fresh machine the playbook has to do it first.
+# What is written here is byte-for-byte what that script writes, so it adopts
+# the configuration rather than replacing it.
+
+- name: Check whether the OpenAI repository key is trusted
+  ansible.builtin.command:
+    cmd: pacman-key --list-keys {{ ai_tools_chatgpt_key_fingerprint }}
+  register: ai_tools_chatgpt_key
+  changed_when: false
+  failed_when: false
+
+- name: Trust the OpenAI repository key
+  when: ai_tools_chatgpt_key.rc != 0
+  block:
+    - name: Copy the OpenAI repository key
+      ansible.builtin.copy:
+        src: openai-chatgpt.asc
+        dest: /tmp/openai-chatgpt.asc
+        mode: "0644"
+
+    # The key file is in this repository, so check it is the key it claims to
+    # be before it becomes something pacman trusts.
+    - name: Read the fingerprint of the copied key
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          gpg --batch --show-keys --with-colons /tmp/openai-chatgpt.asc |
+          awk -F: '$1 == "fpr" { print $10; exit }'
+        executable: /bin/bash
+      register: ai_tools_chatgpt_key_file
+      changed_when: false
+
+    - name: Stop if the key is not the expected one
+      ansible.builtin.assert:
+        that: ai_tools_chatgpt_key_file.stdout == ai_tools_chatgpt_key_fingerprint
+        fail_msg: The OpenAI repository key in this role does not have the expected fingerprint.
+
+    - name: Add the OpenAI repository key to the pacman keyring
+      ansible.builtin.command:
+        cmd: pacman-key --add /tmp/openai-chatgpt.asc
+      changed_when: true
+
+    - name: Sign the OpenAI repository key locally
+      ansible.builtin.command:
+        cmd: pacman-key --lsign-key {{ ai_tools_chatgpt_key_fingerprint }}
+      changed_when: true
+
+    - name: Remove the copied key
+      ansible.builtin.file:
+        path: /tmp/openai-chatgpt.asc
+        state: absent
+
+- name: Configure the OpenAI repository
+  ansible.builtin.copy:
+    dest: /etc/pacman.d/openai-chatgpt.conf
+    mode: "0644"
+    content: |
+      ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+      # Remove it and its Include line to opt out of automatic package updates.
+      [openai-chatgpt]
+      SigLevel = Required DatabaseRequired TrustedOnly
+      Server = https://persistent.oaistatic.com/codex-app-prod/linux/arch/$arch
+  register: ai_tools_chatgpt_repo
+
+- name: Include the OpenAI repository in pacman.conf
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    line: Include = /etc/pacman.d/openai-chatgpt.conf
+  register: ai_tools_chatgpt_include
+
+- name: Install ChatGPT desktop
+  community.general.pacman:
+    name: chatgpt-bin
+    state: present
+    update_cache: "{{ ai_tools_chatgpt_repo is changed or ai_tools_chatgpt_include is changed }}"
+
+# ------------------------------------------------------------
 # OpenCode and Hermes
 # ------------------------------------------------------------
 
