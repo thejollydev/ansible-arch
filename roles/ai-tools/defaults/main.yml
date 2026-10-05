@@ -34,3 +34,8 @@ ai_tools_desktop: "{{ workstation_home }}/.local/share/applications"
 # every AI tool is reachable under one --tags ai-tools.
 ai_tools_npm_packages:
   - "@openai/codex"
+
+# The key OpenAI signs its pacman repository with (uid "Codex Linux
+# Repository"). The public key is files/openai-chatgpt.asc; this is what it
+# is checked against before pacman is told to trust it.
+ai_tools_chatgpt_key_fingerprint: "3BFA0E4AE8B8CC16A2D9BA684A3B4A566C4660E4"

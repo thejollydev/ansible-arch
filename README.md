@@ -81,7 +81,7 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | `terminal` | kitty, zellij, tmux | — |
 | `editor` | Neovim | — |
 | `dev-tools` | git, docker, languages, CLI utilities | — |
-| `ai-tools` | Antigravity CLI (`agy`), Antigravity 2.0, Antigravity IDE, Codex CLI. Install-if-absent — all four self-update, so pinned versions are bootstrap only. Auth is never automated; see `~/POST-INSTALL.md` | `ai_tools` |
+| `ai-tools` | Antigravity CLI (`agy`), Antigravity 2.0, Antigravity IDE, Codex CLI, ChatGPT desktop, OpenCode, Hermes. Install-if-absent — all four self-update, so pinned versions are bootstrap only. Auth is never automated; see `~/POST-INSTALL.md` | `ai_tools` |
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
 | `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, Claude Desktop, etc. | — |
 | `aur-audit` | Weekly read-only AUR supply-chain audit — maintainer churn detection, user timer, `--self-test` | — |
