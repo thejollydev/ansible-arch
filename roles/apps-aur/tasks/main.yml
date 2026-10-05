@@ -7,7 +7,7 @@
       - google-chrome
       - visual-studio-code-bin
       - jetbrains-toolbox
-      - slack-desktop-wayland
+      - slack-desktop
       - zoom
       - notion-app-electron
       - postman-bin
