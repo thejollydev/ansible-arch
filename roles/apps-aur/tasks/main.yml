@@ -12,5 +12,8 @@
       - notion-app-electron
       - postman-bin
       - gitkraken
+      # Claude Desktop. It downloads and updates its own copy of Claude Code
+      # for the sessions it runs, so there is no separate installer.
+      - claude-desktop-extra
     state: present
     use: paru

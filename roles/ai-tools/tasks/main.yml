@@ -54,15 +54,33 @@
         dest: /tmp/agy-install.sh
         mode: "0755"
 
-    # ⚠️ --skip-path and --skip-aliases are MANDATORY, not tidiness.
-    # The installer appends a PATH export to .bashrc, .zshrc, .bash_profile
-    # AND .profile. ~/.zshrc is stow-managed by the `dotfiles` role and
-    # already exports ~/.local/bin, so without these flags this role and the
-    # dotfiles role fight on every run and a duplicate PATH entry accretes.
-    - name: Run the Antigravity CLI installer without touching shell profiles
+    # The installer downloads the binary and then runs "agy install", which
+    # appends a PATH export to .bashrc, .zshrc, .bash_profile AND .profile.
+    # ~/.zshrc is stow-managed by the `dotfiles` role, which runs later, so a
+    # file created here makes stow refuse to link. The installer used to take
+    # --skip-path and --skip-aliases itself; it no longer does, but
+    # "agy install" still accepts them, so they are added to that last step.
+    - name: Make the installer leave shell profiles alone
+      become: false
+      ansible.builtin.replace:
+        path: /tmp/agy-install.sh
+        regexp: '("\$BINARY_PATH" install)( --dir "\$CUSTOM_DIR")? \|\| true'
+        replace: '\1\2 --skip-path --skip-aliases || true'
+      register: ai_tools_agy_installer_patch
+
+    # If the installer changes shape again, stop here rather than let it edit
+    # the profiles.
+    - name: Check the installer was changed
+      ansible.builtin.assert:
+        that: ai_tools_agy_installer_patch is changed
+        fail_msg: >-
+          The Antigravity installer no longer ends with "agy install", so the
+          flags that keep it out of shell profiles could not be added.
+
+    - name: Run the Antigravity CLI installer
       become: false
       ansible.builtin.command:
-        cmd: /tmp/agy-install.sh --skip-path --skip-aliases
+        cmd: /tmp/agy-install.sh
         creates: "{{ ai_tools_bin }}/agy"
 
     - name: Remove the installer
