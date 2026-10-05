@@ -197,10 +197,8 @@
       - Sign in with your Google account
       - Set sync target to `~/GoogleDrive/`
 
-      ## 3. Claude Code — Authenticate
-      ```
-      claude login
-      ```
+      ## 3. Claude Desktop — Sign in
+      Open Claude from the application menu and sign in.
 
       ## 4. Printer — Setup
       KDE Plasma's printer utility does NOT work for the network printer.
