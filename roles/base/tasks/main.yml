@@ -349,6 +349,15 @@
     state: present
   when: btrfs | bool
 
+# Without a root configuration there is no /.snapshots, snapper's timers have
+# nothing to do, and grub-btrfsd fails at every start. Runs once: an existing
+# configuration, and whatever limits were set in it, are left alone.
+- name: Create the snapper configuration for the root filesystem
+  ansible.builtin.command:
+    cmd: snapper -c root create-config /
+    creates: /etc/snapper/configs/root
+  when: btrfs | bool
+
 # ------------------------------------------------------------
 # zram swap
 # ------------------------------------------------------------
