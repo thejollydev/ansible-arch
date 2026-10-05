@@ -74,7 +74,7 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the per-profile DNS block gates on `networking_dns_manage` (role default `true`) and runs only for the profiles named in `networking_dns_connections` | per-flag |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
-| `gpu-nvidia` | nvidia-dkms, CUDA, cuDNN | `gpu_nvidia` |
+| `gpu-nvidia` | nvidia-open-dkms, CUDA, cuDNN | `gpu_nvidia` |
 | `desktop-kde` | KDE Plasma 6, SDDM, fonts | — |
 | `desktop-hyprland` | Hyprland, uwsm, wofi, dunst, grim | `hyprland` |
 | `shell` | zsh, plugins, starship, default shell | — |
