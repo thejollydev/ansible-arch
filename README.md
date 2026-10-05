@@ -83,7 +83,7 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | `dev-tools` | git, docker, languages, CLI utilities | — |
 | `ai-tools` | Antigravity CLI (`agy`), Antigravity 2.0, Antigravity IDE, Codex CLI. Install-if-absent — all four self-update, so pinned versions are bootstrap only. Auth is never automated; see `~/POST-INSTALL.md` | `ai_tools` |
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
-| `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, etc. | — |
+| `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, Claude Desktop, etc. | — |
 | `aur-audit` | Weekly read-only AUR supply-chain audit — maintainer churn detection, user timer, `--self-test` | — |
 | `winboat` | WinBoat host side for running Microsoft 365 in a Windows container: package and a fix for the executable bits its PKGBUILD strips, a `winboat` launcher, `iptable_nat`, a nodatacow `~/winboat` subvolume, and a 0600 compose file. The Windows VM itself is created by hand, through WinBoat's own setup wizard | `winboat` |
 | `printing` | CUPS, sane-airscan, Canon PIXMA driver | `printing` |
