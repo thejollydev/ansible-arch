@@ -12,11 +12,34 @@
   loop:
     - NetworkManager
     - avahi-daemon
-    - docker
     - plasmalogin
     - reflector.timer
     - systemd-resolved
     - systemd-timesyncd
+
+# Docker loads kernel modules when it starts. On a fresh machine the base
+# role's full upgrade has usually just replaced the running kernel, so its
+# modules are gone from disk and docker cannot start until the next boot.
+# Enable it either way; start it only when the running kernel can still load
+# modules.
+- name: Look for the running kernel's modules
+  ansible.builtin.stat:
+    path: "/usr/lib/modules/{{ ansible_facts['kernel'] }}"
+  register: services_running_kernel_modules
+
+- name: Enable docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: "{{ 'started' if services_running_kernel_modules.stat.exists else omit }}"
+
+- name: Say that docker starts after a reboot
+  ansible.builtin.debug:
+    msg: >-
+      The running kernel {{ ansible_facts['kernel'] }} was replaced by an
+      upgrade, so docker is enabled but not started. Reboot, then run the
+      playbook again.
+  when: not services_running_kernel_modules.stat.exists
 
 # Textfile collector ONLY. The exporter is there so a Prometheus server on
 # the home network can read one metric, bezaforge_dns_primary_in_use,

@@ -296,15 +296,22 @@
   notify: Regenerate GRUB menu
   when: bootloader == 'grub'
 
-# GRUB lists every unified kernel image it finds in EFI/Linux, each under the
-# same name. This setup boots image files, so the script is switched off. A
-# grub package upgrade restores the executable bit; this puts it back.
+# A 15_uki script makes GRUB list every unified kernel image it finds in
+# EFI/Linux, each under the same name. This setup boots image files, so the
+# script is switched off where it exists. The grub package does not ship it,
+# so a fresh machine has none and there is nothing to do.
+- name: Look for a unified kernel image script in grub.d
+  ansible.builtin.stat:
+    path: /etc/grub.d/15_uki
+  register: base_grub_uki
+  when: bootloader == 'grub'
+
 - name: Keep unified kernel images out of the GRUB menu
   ansible.builtin.file:
     path: /etc/grub.d/15_uki
     mode: '0644'
   notify: Regenerate GRUB menu
-  when: bootloader == 'grub'
+  when: bootloader == 'grub' and base_grub_uki.stat.exists
 
 - name: Build image files, not unified kernel images
   ansible.builtin.template:
@@ -340,6 +347,15 @@
   community.general.pacman:
     name: snapper
     state: present
+  when: btrfs | bool
+
+# Without a root configuration there is no /.snapshots, snapper's timers have
+# nothing to do, and grub-btrfsd fails at every start. Runs once: an existing
+# configuration, and whatever limits were set in it, are left alone.
+- name: Create the snapper configuration for the root filesystem
+  ansible.builtin.command:
+    cmd: snapper -c root create-config /
+    creates: /etc/snapper/configs/root
   when: btrfs | bool
 
 # ------------------------------------------------------------
