@@ -17,6 +17,7 @@
       - python-poetry
       - python-virtualenv
       - uv
+      - mise   # the zsh dotfiles package runs "mise activate" at every shell start
       - terraform
       - bat
       - btop
