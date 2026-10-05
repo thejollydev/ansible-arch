@@ -18,4 +18,8 @@
       - sddm
       - ttf-jetbrains-mono-nerd
       - xorg-xinit
+      - xorg-server
+      - xdg-utils
+      - union
+      - power-profiles-daemon
     state: present

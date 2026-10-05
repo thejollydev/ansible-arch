@@ -16,6 +16,7 @@
     name:
       - iwd
       - wireless_tools
+      - wpa_supplicant
     state: present
   when: wifi | bool
 # ------------------------------------------------------------

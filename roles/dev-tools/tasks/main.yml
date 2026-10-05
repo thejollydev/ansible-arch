@@ -34,6 +34,23 @@
       - bind
       - dbeaver
       - ollama
+      - jq
+      - glow
+      - pandoc-cli
+      - texlive-basic
+      - rclone
+      - sshpass
+      - python-pipx
+      - rust
+      - php
+      - composer
+      - wp-cli
+      - corepack
+      - bpf
+      - podman
+      - qemu-system-x86
+      - edk2-ovmf
+      - virtiofsd
     state: present
 
 - name: Install prometheus-node-exporter
