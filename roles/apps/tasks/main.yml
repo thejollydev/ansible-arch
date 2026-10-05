@@ -12,5 +12,15 @@
       - libreoffice-fresh
       - obsidian
       - vlc
+      - vlc-plugin-avahi
+      - vlc-plugin-chromecast
+      - obs-studio
+      - calibre
+      - freecad
+      - sweethome3d
+      - pdfarranger
+      - xiphos
+      - proton-vpn-gtk-app
+      - waydroid
       - ffmpeg          # CLI media toolkit; backs the `normalize-audio` script (dotfiles bin/)
     state: present

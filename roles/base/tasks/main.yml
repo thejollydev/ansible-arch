@@ -50,6 +50,8 @@
       - zip
       - tree
       - nano
+      - less
+      - ntfs-3g
       - vim
       - stow
       - reflector

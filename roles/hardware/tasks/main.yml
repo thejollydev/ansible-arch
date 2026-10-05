@@ -9,6 +9,13 @@
     use: paru
   when: displaylink | bool
 
+# Sound Open Firmware: the audio DSP on recent Intel laptops stays silent
+# without it. Harmless where the hardware is absent.
+- name: Install sound firmware
+  community.general.pacman:
+    name: sof-firmware
+    state: present
+
 - name: Install iOS integration packages
   community.general.pacman:
     name:

@@ -12,6 +12,15 @@
       - notion-app-electron
       - postman-bin
       - gitkraken
+      - gitnuro-bin
+      - losslesscut-bin
+      - webex-bin
+      - immersed
+      - playtorrio-bin
+      - sysd-manager
+      - catt
+      - google-cloud-cli
+      - ttf-google-fonts-typewolf
       # Claude Desktop. It downloads and updates its own copy of Claude Code
       # for the sessions it runs, so there is no separate installer.
       - claude-desktop-extra

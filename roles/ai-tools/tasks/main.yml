@@ -218,6 +218,24 @@
     - antigravity-ide
 
 # ------------------------------------------------------------
+# OpenCode and Hermes
+# ------------------------------------------------------------
+
+- name: Install OpenCode
+  community.general.pacman:
+    name: opencode
+    state: present
+
+- name: Install the OpenCode and Hermes desktop apps
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - opencode-desktop
+      - hermes-agent-desktop
+    state: present
+    use: paru
+
+# ------------------------------------------------------------
 # Codex CLI
 # ------------------------------------------------------------
 # Installed globally with the system npm (matching dev-tools' npm task, which
