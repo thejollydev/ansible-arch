@@ -22,10 +22,6 @@ networking_dns_connections: "{{ vault_networking_dns_connections }}"
 kernels:
   - linux-zen
   - linux-zen-headers
-  - linux-lts
-  - linux-lts-headers
-  - linux-hardened
-  - linux-hardened-headers
   - linux
   - linux-headers
 
