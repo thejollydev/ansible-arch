@@ -6,6 +6,8 @@ ansible_connection: local
 hostname: jolly-LOQ-arch
 timezone: America/Detroit
 locale: en_US.UTF-8
+console_font: ter-v24n               # larger text on the virtual console
+console_font_package: terminus-font  # the package that ships it
 
 # Private values come from vault.yml beside this file, which is encrypted
 # with ansible-vault. Applies need --ask-vault-pass; --syntax-check and
