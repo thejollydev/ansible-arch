@@ -200,11 +200,19 @@
     content: "LANG={{ locale }}\n"
     mode: '0644'
 
-- name: Set vconsole keymap
+# The console font is read from /etc/vconsole.conf and copied into the
+# initramfs by the consolefont hook, so a change needs the images rebuilt.
+- name: Install the console font
+  community.general.pacman:
+    name: "{{ console_font_package }}"
+    state: present
+
+- name: Set vconsole keymap and font
   ansible.builtin.copy:
     dest: /etc/vconsole.conf
-    content: "KEYMAP=us\n"
+    content: "KEYMAP=us\nFONT={{ console_font }}\n"
     mode: '0644'
+  notify: Rebuild initramfs images
 
 # ------------------------------------------------------------
 # Timezone
