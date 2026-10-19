@@ -1,0 +1,58 @@
+---
+# The read-only gates from the quality plan: syntax, ansible-lint, yamllint.
+# Nothing here applies the playbook; applies stay with a human on the machine.
+#
+# Tool versions match the workstation that maintains this repository, so a
+# result here means the same as a result there. Bumping one is a deliberate
+# change, not drift.
+name: checks
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANSIBLE_CORE_VERSION: "2.21.5"
+  ANSIBLE_LINT_VERSION: "26.4.0"
+  YAMLLINT_VERSION: "1.38.0"
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install the tools
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "ansible-core==${ANSIBLE_CORE_VERSION}" \
+            "ansible-lint==${ANSIBLE_LINT_VERSION}" \
+            "yamllint==${YAMLLINT_VERSION}"
+          ansible-galaxy collection install -r requirements.yml
+
+      # The encrypted host_vars file is never decrypted: neither the syntax
+      # check nor the linters read variable values, so no vault password is
+      # needed, and none exists here.
+      - name: Syntax
+        run: ansible-playbook site.yml --syntax-check
+
+      - name: ansible-lint
+        run: ansible-lint
+
+      - name: yamllint
+        run: yamllint --strict .
