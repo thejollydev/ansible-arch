@@ -89,7 +89,6 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | `printing` | CUPS, sane-airscan, Canon PIXMA driver | `printing` |
 | `hardware` | DisplayLink, iOS tools, Plymouth | per-flag |
 | `insync` | Insync + Dolphin plugin | `insync` |
-| `remote-desktop` | XRDP + xorgxrdp. **Legacy** — `gnome-remote-desktop` is the standard choice for GNOME hosts, installed outside this playbook | `remote_desktop` |
 | `syncthing` | Peer-to-peer file sync | `syncthing` |
 | `dotfiles` | Clone dotfiles repo, GNU Stow deploy | — |
 | `services` | Enable all system + user systemd services | per-flag |
@@ -104,7 +103,6 @@ gpu_nvidia: false
 hyprland: false
 bluetooth: false
 wifi: false
-remote_desktop: true
 printing: true
 insync: true
 ```

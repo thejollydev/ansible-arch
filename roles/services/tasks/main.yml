@@ -132,13 +132,6 @@
     - nvidia-suspend-then-hibernate
   when: gpu_nvidia | bool
 
-- name: Enable XRDP service
-  ansible.builtin.systemd:
-    name: xrdp
-    enabled: true
-    state: started
-  when: remote_desktop | bool
-
 # ------------------------------------------------------------
 # User services (always)
 # ------------------------------------------------------------
