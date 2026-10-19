@@ -119,6 +119,8 @@ Role-internal tunables are different and *do* have defaults, in that role's `def
 
 ```
 ansible-arch/
+├── .github/workflows/
+│   └── checks.yml            # syntax, ansible-lint, yamllint
 ├── inventory/
 │   ├── hosts.yml
 │   └── host_vars/
@@ -151,6 +153,11 @@ ansible-arch/
 changed any machine until `ansible-playbook` is run against it. Apply, then
 apply again — the second run should report `changed=0`.
 
-**AUR installs are interactive by design.** paru presents PKGBUILDs for
-review; the guarantee is the *absence* of a `SkipReview` setting. A run that
-appears to hang on an AUR package is waiting for you.
+**AUR builds are not reviewed during an apply.** The `aur` module runs paru
+with `--noconfirm`. paru run by hand presents PKGBUILDs for review; that
+guarantee is the *absence* of a `SkipReview` setting, asserted in
+`roles/base`.
+
+**Checks run on every pull request.** `.github/workflows/checks.yml` runs the
+syntax check, `ansible-lint` and `yamllint --strict`, with the tool versions
+pinned in the file. It never applies anything and needs no vault password.
