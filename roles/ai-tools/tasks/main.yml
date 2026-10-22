@@ -300,7 +300,7 @@
     update_cache: "{{ ai_tools_chatgpt_repo is changed or ai_tools_chatgpt_include is changed }}"
 
 # ------------------------------------------------------------
-# OpenCode and Hermes
+# OpenCode
 # ------------------------------------------------------------
 
 - name: Install OpenCode
@@ -308,12 +308,10 @@
     name: opencode
     state: present
 
-- name: Install the OpenCode and Hermes desktop apps
+- name: Install the OpenCode desktop app
   become: false
   kewlfft.aur.aur:
-    name:
-      - opencode-desktop
-      - hermes-agent-desktop
+    name: opencode-desktop
     state: present
     use: paru
 
