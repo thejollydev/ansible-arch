@@ -340,10 +340,12 @@
 # ------------------------------------------------------------
 # Never4gA
 # ------------------------------------------------------------
-# Installed from PyPI as a uv tool: its own environment under
+# Installed as a uv tool from the public repository's main branch, not from
+# PyPI: a release is published only when a version is tagged, and this machine
+# runs whatever has merged. Its own environment is under
 # ~/.local/share/uv/tools, and its launcher in ~/.local/bin. Install-if-absent
 # like everything above, but it does not update itself; `uv tool upgrade
-# never4ga` moves it forward.
+# never4ga` fetches main again.
 #
 # --force is there for one case: a launcher uv did not put there, such as an
 # editable install from a clone. uv refuses to overwrite one without it, and
@@ -359,10 +361,12 @@
   register: ai_tools_uv_tools
   changed_when: false
 
-- name: Install AI tools from PyPI
+- name: Install AI tools with uv
   become: false
   ansible.builtin.command:
-    cmd: uv tool install --force {{ item }}
+    cmd: uv tool install --force {{ item.source }}
   loop: "{{ ai_tools_uv_packages }}"
-  when: item not in (ai_tools_uv_tools.stdout_lines | map('split') | map('first'))
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.name not in (ai_tools_uv_tools.stdout_lines | map('split') | map('first'))
   changed_when: true
