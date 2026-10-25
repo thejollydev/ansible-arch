@@ -2,7 +2,8 @@
 # ------------------------------------------------------------
 # AI coding CLIs and desktop agents
 # ------------------------------------------------------------
-# Covers: Antigravity CLI (agy) · Antigravity 2.0 · Antigravity IDE · Codex CLI.
+# Covers: Antigravity CLI (agy) · Antigravity 2.0 · Antigravity IDE · ChatGPT
+# desktop · OpenCode · Codex CLI · Never4gA.
 #
 # ⚠️ INSTALL-IF-ABSENT, NEVER CONVERGE-TO-VERSION.
 # Every tool here ships a self-updater. If these tasks asserted the pinned
@@ -335,3 +336,33 @@
     global: true
     state: present
   loop: "{{ ai_tools_npm_packages }}"
+
+# ------------------------------------------------------------
+# Never4gA
+# ------------------------------------------------------------
+# Installed from PyPI as a uv tool: its own environment under
+# ~/.local/share/uv/tools, and its launcher in ~/.local/bin. Install-if-absent
+# like everything above, but it does not update itself; `uv tool upgrade
+# never4ga` moves it forward.
+#
+# --force is there for one case: a launcher uv did not put there, such as an
+# editable install from a clone. uv refuses to overwrite one without it, and
+# replacing it is the point. A tool uv already manages is never reinstalled.
+
+# Read-only, so it runs under --check too and the install below is reported
+# as it would really be.
+- name: List the installed uv tools
+  become: false
+  check_mode: false
+  ansible.builtin.command:
+    cmd: uv tool list
+  register: ai_tools_uv_tools
+  changed_when: false
+
+- name: Install AI tools from PyPI
+  become: false
+  ansible.builtin.command:
+    cmd: uv tool install --force {{ item }}
+  loop: "{{ ai_tools_uv_packages }}"
+  when: item not in (ai_tools_uv_tools.stdout_lines | map('split') | map('first'))
+  changed_when: true
