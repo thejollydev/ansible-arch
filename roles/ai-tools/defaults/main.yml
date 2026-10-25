@@ -35,6 +35,12 @@ ai_tools_desktop: "{{ workstation_home }}/.local/share/applications"
 ai_tools_npm_packages:
   - "@openai/codex"
 
+# AI tools installed with `uv tool install`. `name` is the package name, which
+# is what `uv tool list` reports; `source` is what is installed.
+ai_tools_uv_packages:
+  - name: never4ga
+    source: git+https://github.com/BezaCore-Labs/never4ga
+
 # The key OpenAI signs its pacman repository with (uid "Codex Linux
 # Repository"). The public key is files/openai-chatgpt.asc; this is what it
 # is checked against before pacman is told to trust it.
