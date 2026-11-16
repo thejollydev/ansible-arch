@@ -29,6 +29,9 @@
     - role: ai-tools
       tags: ai-tools
       when: ai_tools | bool
+    - role: writing-check
+      tags: writing-check
+      when: writing_check | bool
     - role: apps
       tags: apps
     - role: apps-aur

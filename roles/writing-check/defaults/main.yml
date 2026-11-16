@@ -1,0 +1,8 @@
+---
+# ------------------------------------------------------------
+# writing-check — local pre-submission writing check
+# ------------------------------------------------------------
+# Installed as a uv tool from its private repository's main, with the
+# `detect` extra (PyTorch with CUDA) for the AI-detection model. Like
+# Never4gA, it moves forward with `uv tool upgrade writing-check`.
+writing_check_source: "writing-check[detect] @ git+ssh://git@github.com/thejollydev/writing-check.git"
