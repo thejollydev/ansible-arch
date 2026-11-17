@@ -150,7 +150,28 @@
     - ssh-agent
 
 # Units from the dotfiles `systemd` package, which the `dotfiles` role has
-# stowed by now.
+# stowed by now. Under --check the stow is skipped, so on a machine where the
+# units are not linked yet the dry run says so and moves on rather than
+# failing; a real run always tries, and fails if a unit is missing.
+- name: Look for the writing-check user units
+  ansible.builtin.stat:
+    path: "{{ workstation_home }}/.config/systemd/user/{{ item }}.service"
+  loop:
+    - languagetool
+    - writing-check
+  register: services_writing_check_units
+  when: writing_check | bool
+
+- name: Say that the writing-check units are linked by the real run
+  ansible.builtin.debug:
+    msg: >-
+      {{ services_writing_check_units.results | rejectattr('stat.exists') | map(attribute='item') | join(', ') }}
+      not linked yet: the dotfiles stow links them on a real run, then this enables them.
+  when:
+    - writing_check | bool
+    - ansible_check_mode
+    - services_writing_check_units.results | rejectattr('stat.exists') | list | length > 0
+
 - name: Enable writing-check user services
   become: false
   ansible.builtin.systemd:
@@ -162,7 +183,9 @@
   loop:
     - languagetool
     - writing-check
-  when: writing_check | bool
+  when:
+    - writing_check | bool
+    - not (ansible_check_mode and services_writing_check_units.results | rejectattr('stat.exists') | list | length > 0)
 
 # Both exit once their work is done (dispatcher is D-Bus activated, and
 # xdg-user-dirs is a oneshot), so `state: started` restarted them and reported
