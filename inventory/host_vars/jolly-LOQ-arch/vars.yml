@@ -29,6 +29,7 @@ kernels:
 
 # Feature flags
 ai_tools: true
+writing_check: true
 gpu_nvidia: true
 hyprland: true
 bluetooth: true

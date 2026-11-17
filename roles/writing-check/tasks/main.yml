@@ -1,0 +1,46 @@
+---
+# ------------------------------------------------------------
+# writing-check — grammar, proofreading and AI detection in one page
+# ------------------------------------------------------------
+# The page is served by the writing-check user service on 127.0.0.1:8770.
+# Grammar comes from a LanguageTool server run as the languagetool user
+# service on 127.0.0.1:8010; both unit files live in the dotfiles `systemd`
+# package and are enabled by the `services` role.
+#
+# The packaged system unit (languagetool.service under /usr/lib) is left
+# disabled: it listens on 8081, which a container already uses here, and
+# the user unit is the one that runs.
+#
+# The detector's weights are NOT downloaded here. They are gated on Hugging
+# Face behind Meta's Llama 3.2 licence, which only the account holder can
+# accept; ~/POST-INSTALL.md has the steps, and the first check after them
+# downloads the model.
+
+- name: Install LanguageTool
+  community.general.pacman:
+    name: languagetool
+    state: present
+
+# Read-only, so it runs under --check too and the install below is reported
+# as it would really be.
+- name: List the installed uv tools
+  become: false
+  check_mode: false
+  ansible.builtin.command:
+    cmd: uv tool list
+  register: writing_check_uv_tools
+  changed_when: false
+
+# Install-if-absent: a tool uv already manages is never reinstalled, and
+# `uv tool upgrade writing-check` fetches main again. The clone goes over
+# SSH because the repository is private, so the key must be loaded.
+- name: Install writing-check with uv
+  become: false
+  ansible.builtin.command:
+    argv:
+      - uv
+      - tool
+      - install
+      - "{{ writing_check_source }}"
+  when: "'writing-check' not in (writing_check_uv_tools.stdout_lines | map('split') | map('first'))"
+  changed_when: true

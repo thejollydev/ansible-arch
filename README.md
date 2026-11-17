@@ -82,6 +82,7 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | `editor` | Neovim | — |
 | `dev-tools` | git, docker, languages, CLI utilities | — |
 | `ai-tools` | Antigravity CLI (`agy`), Antigravity 2.0, Antigravity IDE, Codex CLI, ChatGPT desktop, OpenCode, Never4gA. Install-if-absent — the Antigravity tools update themselves, so their pinned versions are bootstrap only, and Never4gA is installed from its repository's `main` and moves forward with `uv tool upgrade never4ga`. Auth is never automated; see `~/POST-INSTALL.md` | `ai_tools` |
+| `writing-check` | LanguageTool and writing-check, a local page that checks writing before it is submitted: grammar from LanguageTool, proofreading from Ollama, AI detection from Open Pangram on the GPU. Installed as a uv tool from its repository's `main`; the units are in the dotfiles `systemd` package and the gated model download is a manual step in `~/POST-INSTALL.md` | `writing_check` |
 | `apps` | firefox, discord, thunderbird, obsidian, libreoffice, etc. | — |
 | `apps-aur` | bitwarden, vscode, jetbrains-toolbox, slack, zoom, Claude Desktop, etc. | — |
 | `aur-audit` | Weekly read-only AUR supply-chain audit — maintainer churn detection, user timer, `--self-test` | — |
