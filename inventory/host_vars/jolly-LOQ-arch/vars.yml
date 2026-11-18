@@ -62,6 +62,7 @@ dotfiles_packages:
   - claude
   - systemd
   - bin
+  - writing-check
 # Stowed with --no-folding: only the files in the package are linked, never a
 # directory. Antigravity writes runtime state beside config/mcp_config.json,
 # and a folded ~/.gemini/config link would put that state in the repo.
