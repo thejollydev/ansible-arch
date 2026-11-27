@@ -1,0 +1,45 @@
+---
+# ============================================================
+# kopia — hourly backup of the home directory to the homelab
+# ============================================================
+# Kopia snapshots the home directory every hour into a repository on the
+# homelab's bezapool, over SFTP. The server side (the dataset and an
+# account that can do nothing but SFTP inside it) is roles/kopia-target in
+# bezaforge-infrastructure. KopiaUI is installed for browsing snapshots and
+# restoring from them.
+#
+# The repository is created once by hand, because its password is typed,
+# never stored in this repository: see bezaforge-infrastructure's
+# docs/runbooks/kopia-laptop-backup.md. Until it exists the timer fires and
+# the service skips itself.
+
+kopia_home: "{{ workstation_home }}"
+
+# The homelab hypervisor, by address: it is reachable on the home network
+# and over WireGuard, and the address is what known_hosts already holds.
+kopia_sftp_host: 10.10.10.10
+kopia_sftp_user: kopia
+kopia_ssh_key: "{{ kopia_home }}/.ssh/kopia_ed25519"
+
+# What is left out, as .kopiaignore patterns relative to the home
+# directory. Each is either kept somewhere else already or rebuilt on its
+# own. Project dependencies and virtual environments are rebuilt from
+# their lock files, so they are left out wherever they are.
+kopia_ignore:
+  - /GoogleDrive/              # Google keeps it, and the hypervisor replicates it nightly
+  - /.cache/
+  - /.local/share/Steam/       # games download again
+  - /.local/share/Trash/
+  - /.local/share/JetBrains/   # IDE installs; Toolbox reinstalls them
+  - /.local/share/uv/
+  - /.local/share/pnpm/
+  - /.local/share/pipx/
+  - /.bun/
+  - /.npm/
+  - /.u2net/                   # model downloads
+  - /winboat/                  # the Windows VM disk image
+  - /bazzite-seed/
+  - /.thunderbird/             # mail lives on the server (owner's ruling, 2026-11-27)
+  - node_modules/
+  - .venv/
+  - __pycache__/

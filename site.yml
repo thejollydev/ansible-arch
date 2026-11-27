@@ -50,6 +50,8 @@
     - role: syncthing
       tags: syncthing
       when: syncthing | bool
+    - role: kopia
+      tags: kopia
     - role: dotfiles
       tags: dotfiles
     - role: services
