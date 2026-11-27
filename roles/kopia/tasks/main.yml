@@ -1,0 +1,106 @@
+---
+# roles/kopia — see defaults/main.yml for what and why. Every user path is
+# written out from workstation_home: the play runs with become: true, so
+# ansible_env.HOME would be /root.
+
+- name: Install Kopia and KopiaUI
+  become: false
+  kewlfft.aur.aur:
+    name:
+      - kopia-bin
+      - kopia-ui-bin
+    state: present
+    use: paru
+
+- name: Ensure the user directories exist
+  become: false
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
+  loop:
+    - "{{ kopia_home }}/.ssh"
+    - "{{ kopia_home }}/.config/kopia"
+    - "{{ kopia_home }}/.config/systemd/user"
+    - "{{ kopia_home }}/.local/bin"
+
+# Made once and never replaced: the server's host_vars hold its public
+# half. A new laptop means a new key and a one-line change there.
+- name: Create the SSH key the backup logs in with
+  become: false
+  ansible.builtin.command:
+    cmd: ssh-keygen -q -t ed25519 -N "" -C kopia -f {{ kopia_ssh_key }}
+    creates: "{{ kopia_ssh_key }}"
+
+- name: Write the list of what the backup leaves out
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ kopia_home }}/.kopiaignore"
+    mode: "0644"
+    content: |
+      # Managed by ansible-arch (roles/kopia). Paths are relative to the home
+      # directory; see the role's defaults for why each is left out.
+      {% for pattern in kopia_ignore %}
+      {{ pattern }}
+      {% endfor %}
+
+- name: Install the backup script
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ kopia_home }}/.local/bin/kopia-backup"
+    mode: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # One snapshot of the home directory. Run hourly by kopia-backup.timer.
+      # Managed by ansible-arch (roles/kopia).
+      set -euo pipefail
+      kopia snapshot create "$HOME"
+      # Tell Uptime Kuma it ran, if a push URL has been put here. A backup
+      # that stops running is noticed by the missing heartbeat.
+      url_file="$HOME/.config/kopia/heartbeat-url"
+      if [[ -r "${url_file}" ]]; then
+          curl -fsS -m 15 -o /dev/null "$(<"${url_file}")" || true
+      fi
+
+- name: Install the backup service
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ kopia_home }}/.config/systemd/user/kopia-backup.service"
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Kopia snapshot of the home directory
+      # Skipped until the repository has been created and connected.
+      ConditionPathExists=%h/.config/kopia/repository.config
+
+      [Service]
+      Type=oneshot
+      ExecStart=%h/.local/bin/kopia-backup
+      Nice=10
+      IOSchedulingClass=idle
+
+- name: Install the backup timer
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ kopia_home }}/.config/systemd/user/kopia-backup.timer"
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Hourly Kopia snapshot of the home directory
+
+      [Timer]
+      OnCalendar=hourly
+      Persistent=true
+      RandomizedDelaySec=5m
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Enable and start the backup timer
+  become: false
+  ansible.builtin.systemd:
+    name: kopia-backup.timer
+    enabled: true
+    state: started
+    scope: user
+    daemon_reload: true
