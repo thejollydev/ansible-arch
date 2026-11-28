@@ -4,6 +4,20 @@
 # ============================================================
 
 # ------------------------------------------------------------
+# Wi-Fi regulatory domain
+# ------------------------------------------------------------
+# Applies when the host's `wifi` flag is on. Without a domain the kernel
+# stays in the world domain, 00, where the card may only scan DFS channels
+# passively. The home 5 GHz radio is on channel 52, a DFS channel, so the
+# laptop often failed to see it and fell back to 2.4 GHz, with the latency
+# and jitter that brought (found 2026-11-21, work item 1859). Setting the
+# country lets it scan and join DFS channels the way the access point does.
+#
+# A two-letter ISO 3166 code in capitals. Change it per host in host_vars
+# for a machine used in another country.
+networking_wifi_regdom: US
+
+# ------------------------------------------------------------
 # DNS resilience on the home network
 # ------------------------------------------------------------
 # The workstation used to resolve through a SINGLE server, handed out by

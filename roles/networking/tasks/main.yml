@@ -15,10 +15,97 @@
   community.general.pacman:
     name:
       - iwd
+      - iw
       - wireless_tools
+      - wireless-regdb
       - wpa_supplicant
     state: present
   when: wifi | bool
+
+# ------------------------------------------------------------
+# Wi-Fi regulatory domain
+# ------------------------------------------------------------
+# See defaults/main.yml for why. wireless-regdb ships the kernel's
+# regulatory.db, /etc/conf.d/wireless-regdom with every country commented
+# out, and a udev rule that runs set-wireless-regdom (which reads that
+# file and calls `iw reg set`) whenever cfg80211 loads. So the file is
+# what holds the setting across boots, and `iw reg set` below only saves
+# waiting for the next boot.
+- name: Set the Wi-Fi regulatory domain
+  when: wifi | bool
+  block:
+
+    - name: Check the regulatory domain is a country code
+      ansible.builtin.assert:
+        that: networking_wifi_regdom is match('^([A-Z]{2}|00)$')
+        fail_msg: >-
+          networking_wifi_regdom is '{{ networking_wifi_regdom }}', not a
+          two-letter ISO 3166 code in capitals (or 00 for the world domain).
+        quiet: true
+
+    # Uncommented line replaced if there is one, appended if not. The
+    # packaged file's ~180 commented-out countries are left alone, so a
+    # changed country edits one line rather than adding a second.
+    - name: Write the regulatory domain to /etc/conf.d/wireless-regdom
+      ansible.builtin.lineinfile:
+        path: /etc/conf.d/wireless-regdom
+        regexp: '^WIRELESS_REGDOM='
+        line: 'WIRELESS_REGDOM="{{ networking_wifi_regdom }}"'
+        owner: root
+        group: root
+        mode: '0644'
+
+    # sysfs has one entry per wireless device (phy0, ...). A host with the
+    # wifi flag on and no card (a VM, a card that is switched off at the
+    # hardware) keeps the file for when one appears, but has no cfg80211
+    # domain to set now.
+    - name: Look for a wireless device
+      ansible.builtin.find:
+        paths: /sys/class/ieee80211
+        file_type: any
+      register: networking_wifi_phys
+
+    - name: Apply the regulatory domain now
+      when: networking_wifi_phys.matched > 0
+      block:
+
+        - name: Read the current regulatory domain
+          ansible.builtin.command:
+            cmd: iw reg get
+          register: networking_wifi_regdom_before
+          changed_when: false
+          check_mode: false
+          # Read-only. It runs in --check so the next task can say whether
+          # an apply would change the domain, rather than skipping silently.
+
+        # Only the "global" section is compared. An Intel card shows a
+        # second, self-managed "phy#0" section that follows the global
+        # domain on its own and reports DFS-UNSET; `iw reg set` cannot set
+        # it directly.
+        - name: Set the regulatory domain in the kernel
+          ansible.builtin.command:
+            cmd: iw reg set {{ networking_wifi_regdom }}
+          when: _current != networking_wifi_regdom
+          changed_when: true
+          vars:
+            _current: >-
+              {{ networking_wifi_regdom_before.stdout
+                 | regex_findall('^global\s+country (\w+):')
+                 | first | default('') }}
+
+        - name: Check the kernel reports the regulatory domain
+          ansible.builtin.command:
+            cmd: iw reg get
+          register: networking_wifi_regdom_after
+          changed_when: false
+          # The kernel applies `iw reg set` asynchronously, so a read
+          # straight after it can still show the old domain.
+          until: >-
+            networking_wifi_regdom_after.stdout
+            is search('^global\s+country ' ~ networking_wifi_regdom ~ ':')
+          retries: 5
+          delay: 2
+
 # ------------------------------------------------------------
 # One resolver, asked once
 # ------------------------------------------------------------
