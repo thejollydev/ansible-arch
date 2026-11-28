@@ -71,7 +71,7 @@ ansible-vault encrypt inventory/host_vars/<hostname>/vault.yml
 | Role | Description | Conditional |
 |------|-------------|-------------|
 | `base` | Core packages, paru (AUR helper), locale, timezone, hostname, kernels, bootloader (GRUB with `grub-btrfs` snapshot entries), mkinitcpio presets, snapper, zram, reflector | — |
-| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only iwd/wireless_tools gates on `wifi`; the per-profile DNS block gates on `networking_dns_manage` (role default `true`) and runs only for the profiles named in `networking_dns_connections` | per-flag |
+| `networking` | NetworkManager, wireguard-tools, avahi, nss-mdns, bind, systemd-resolvconf — **unconditional**. Only the Wi-Fi packages (iwd, iw, wireless_tools, wireless-regdb) and the regulatory domain (`networking_wifi_regdom`, role default `US`, written to `/etc/conf.d/wireless-regdom` and applied with `iw reg set` when a wireless device is present) gate on `wifi`; the per-profile DNS block gates on `networking_dns_manage` (role default `true`) and runs only for the profiles named in `networking_dns_connections` | per-flag |
 | `bluetooth` | bluez, bluez-utils | `bluetooth` |
 | `audio` | Full PipeWire stack | — |
 | `gpu-nvidia` | nvidia-open-dkms, CUDA, cuDNN | `gpu_nvidia` |
